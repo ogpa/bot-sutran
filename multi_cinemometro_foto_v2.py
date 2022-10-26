@@ -189,10 +189,13 @@ def obtener_fotos(papeletas):
 
             src= extraer_string(
                 resp_Fotos, 'class="css_image1" src="data:image/jpg;base64,', '" src="%20"')
-            lista_src.append(src)
+            #lista_src.append(src)
+            src_encode = src.encode()
+            with open(numdocumento + ".jpg", "wb") as fh:
+                fh.write(base64.decodebytes(src_encode))
+            
             lista_numdocumentofotos.append(numdocumento)
-            # with open(numdocumento + ".png", "wb") as fh:
-            #     fh.write(base64.decodebytes(src))
+            
             
                 
 
