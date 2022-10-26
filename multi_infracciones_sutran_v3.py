@@ -2,6 +2,7 @@ import urllib
 from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
+from datetime import datetime
 URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_HOME_INFRACCION = "http://webexterno.sutran.gob.pe/WebExterno/Pages/frmRecordInfracciones.aspx"
 
@@ -13,6 +14,7 @@ def extraer_string(textomaster, ini_cabecera, fin_cabecera):
     return texto
 
 def obtener_datos_papeletas(lista_placas):
+    
     lista_sessionid = []
     lista_captcha = []
     lista_viewstate = []
@@ -62,13 +64,15 @@ def obtener_datos_papeletas(lista_placas):
 
     asyncio.run(mainids(lista_placas))
     #print(lista_sessionid)
-
+    
     lista_placa = []
     lista_numdocumento = []
     lista_tipodocumento = []
     lista_fechadocumento = []
     lista_codigoinfraccion = []
     lista_clasificacion = []
+    lista_entidad=[]
+    lista_fechascan=[]
 
 
     async def query_datos(payload, sessionid, placa, session: aiohttp.ClientSession):
@@ -109,6 +113,8 @@ def obtener_datos_papeletas(lista_placas):
                 lista_fechadocumento.append(td[2].text)
                 lista_codigoinfraccion.append(td[3].text)
                 lista_clasificacion.append(td[4].text)
+                lista_entidad.append("SUTRAN")
+                lista_fechascan.append(datetime.today().strftime('%d/%m/%Y'))
 
 
     async def main_datos(multi_placas, lista_sessionid, lista_captcha, lista_viewstate, lista_viewstategenerator, lista_eventvalidation):
@@ -131,7 +137,9 @@ def obtener_datos_papeletas(lista_placas):
                     "tipodocumento": lista_tipodocumento,
                     "fechadocumento": lista_fechadocumento,
                     "codigoinfraccion": lista_codigoinfraccion,
-                    "clasificacion": lista_clasificacion}
+                    "clasificacion": lista_clasificacion,
+                    "entidad":lista_entidad,
+                    "fechascan":lista_fechascan}
 
     #print(dict_papeletas)
     return dict_papeletas
