@@ -1,4 +1,3 @@
-import requests
 import urllib
 from bs4 import BeautifulSoup
 import asyncio
@@ -61,16 +60,7 @@ async def mainids(lista_placas):
         htmls_ids = await asyncio.gather(*tasks_ids, return_exceptions=True)
 
 
-multi_placas = ["BLV785", "AVE847", "BDN910", "BKD764", "BEB884", "BEB741", "BHM942", "ATE776",
-                "ATE778",
-                "ATE880",
-                "ATE914",
-                "ATE937",
-                "ATE938",
-                "ATE939",
-                "ATE940",
-                "ATF713",
-                "ATF714",
+multi_placas = ["BLV785", "AVE847", "BDN910", "BKD764", "BEB884", "BEB741", "BHM942", "ATE776","ATE778","ATE880", "ATE914","ATE937" "ATE938","ATE939","ATE940","ATF713", "ATF714",
                 "ATF715",
                 "ATF716",
                 "ATF720",
