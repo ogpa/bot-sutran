@@ -23,14 +23,8 @@ async def fetch(limit):
                 print(sessionid)
 
 
-async def bound_fetch(sem, url, session):
-    # Getter function with semaphore.
-    async with sem:
-        await fetch(url, session)
-
-
 async def main(r):
-    limit = asyncio.Semaphore(1)
+    limit = asyncio.Semaphore(50)
     tasks = []
     # create instance of Semaphore
 
