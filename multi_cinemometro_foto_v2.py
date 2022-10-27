@@ -8,20 +8,21 @@ URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_CINEMOMETRO = "https://webexterno.sutran.gob.pe/WebExterno/Pages/frmPapeletasCinemometro.aspx"
 RUC_MB_RENTING = "20605414410"
 
+
 def extraer_string(textomaster, ini_cabecera, fin_cabecera):
     ini = textomaster.find(ini_cabecera)
     fin = textomaster.find(fin_cabecera, ini+len(ini_cabecera))
     texto = textomaster[ini+len(ini_cabecera):fin]
     return texto
 
+
 def obtener_fotos(papeletas):
-    
+
     lista_sessionid = []
     lista_captcha = []
     lista_viewstate = []
     lista_viewstategenerator = []
     lista_eventvalidation = []
-
 
     async def query_ids(session: aiohttp.ClientSession):
         async with session.get(URL_SUTRAN_CINEMOMETRO) as resp:
@@ -29,7 +30,8 @@ def obtener_fotos(papeletas):
             data = (await resp.text())
             # print(data)
 
-            sessionid = extraer_string(resp.headers["Set-Cookie"], "", "; path=/;")
+            sessionid = extraer_string(
+                resp.headers["Set-Cookie"], "", "; path=/;")
             # print(sessionid)
             lista_sessionid.append(sessionid)
 
@@ -53,7 +55,6 @@ def obtener_fotos(papeletas):
             # print(eventvalidation)
             lista_eventvalidation.append(eventvalidation)
 
-
     async def mainids(papeletas):
         numdocumento = papeletas["numdocumento"]
 
@@ -64,38 +65,36 @@ def obtener_fotos(papeletas):
                 tasks_ids.append(query_ids(session=session))
             htmls_ids = await asyncio.gather(*tasks_ids, return_exceptions=True)
 
-
     asyncio.run(mainids(papeletas))
-    #print(lista_sessionid)
-    
-    
+    # print(lista_sessionid)
+
     lista_numdocumento = []
     lista_verfoto = []
     lista_viewstate_datos = []
-    lista_viewstategenerator_datos=[]
-    lista_eventvalidation_datos=[]
+    lista_viewstategenerator_datos = []
+    lista_eventvalidation_datos = []
     lista_numdocumento_datos = []
 
     async def query_datos(payload, sessionid, numdocumento, session: aiohttp.ClientSession):
         headers_Datos = {
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-  'Accept-Language': 'en',
-  'Cache-Control': 'max-age=0',
-  'Connection': 'keep-alive',
-  'Content-Type': 'application/x-www-form-urlencoded',
-  'Cookie': sessionid,
-  'Origin': URL_SUTRAN_ORIGIN,
-  'Referer': URL_SUTRAN_CINEMOMETRO,
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'same-origin',
-  'Sec-Fetch-User': '?1',
-  'Upgrade-Insecure-Requests': '1',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-  'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
-  'sec-ch-ua-mobile': '?0',
-  'sec-ch-ua-platform': '"Windows"'
-}
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Language': 'en',
+            'Cache-Control': 'max-age=0',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': sessionid,
+            'Origin': URL_SUTRAN_ORIGIN,
+            'Referer': URL_SUTRAN_CINEMOMETRO,
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"'
+        }
         async with session.post(URL_SUTRAN_CINEMOMETRO, data=payload, headers=headers_Datos) as resp:
 
             resp_InfoPapeleta = (await resp.text())
@@ -115,10 +114,10 @@ def obtener_fotos(papeletas):
 
             # for t in tr_tags:
             #     td = t.find_all("td")
-                
+
             #     lista_numdocumento.append(td[0].text)
             #     lista_verfoto.append(td[8].text)
-            
+
             # sessionid = extraer_string(resp.headers["Set-Cookie"], "", "; path=/;")
             # # print(sessionid)
             # lista_sessionid.append(sessionid)
@@ -143,7 +142,6 @@ def obtener_fotos(papeletas):
             # print(eventvalidation)
             lista_eventvalidation_datos.append(eventvalidation)
             lista_numdocumento_datos.append(numdocumento)
-                
 
     async def main_datos(papeletas, lista_sessionid, lista_captcha, lista_viewstate, lista_viewstategenerator, lista_eventvalidation):
         numdocumento = papeletas["numdocumento"]
@@ -151,7 +149,8 @@ def obtener_fotos(papeletas):
         async with aiohttp.ClientSession() as session:
             tasks_datos = []
             for x in range(longitud_lista_placas):
-                payload='__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE='+ urllib.parse.quote(lista_viewstate[x], safe="") + '&__VIEWSTATEGENERATOR='+ lista_viewstategenerator[x] +'&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION='+ urllib.parse.quote(lista_eventvalidation[x], safe="") +'&rbtListMovimiento=A&txtActa=' + numdocumento[x] + '&ddlTipoBusqueda=3&TxtBuscar=' + RUC_MB_RENTING +'&txtPlaca=&HFCodCapcha=&TxtCodImagen=' +lista_captcha[x] + '&BtnBuscar=Buscar&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1'
+                payload = '__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=' + urllib.parse.quote(lista_viewstate[x], safe="") + '&__VIEWSTATEGENERATOR=' + lista_viewstategenerator[x] + '&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION=' + urllib.parse.quote(
+                    lista_eventvalidation[x], safe="") + '&rbtListMovimiento=A&txtActa=' + numdocumento[x] + '&ddlTipoBusqueda=3&TxtBuscar=' + RUC_MB_RENTING + '&txtPlaca=&HFCodCapcha=&TxtCodImagen=' + lista_captcha[x] + '&BtnBuscar=Buscar&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1'
                 tasks_datos.append(query_datos(
                     payload, lista_sessionid[x], numdocumento[x], session=session))
             htmls_datos = await asyncio.gather(*tasks_datos, return_exceptions=True)
@@ -159,54 +158,61 @@ def obtener_fotos(papeletas):
     asyncio.run(main_datos(papeletas, lista_sessionid, lista_captcha,
                 lista_viewstate, lista_viewstategenerator, lista_eventvalidation))
 
+    longitud_numdocumento = len(papeletas["numdocumento"])
+    lista_path = [None]*longitud_numdocumento
+    lista_numdocumentofotos = [None]*longitud_numdocumento
 
-    lista_src=[]
-    lista_numdocumentofotos=[]
     async def query_fotos(payload, numdocumento, session: aiohttp.ClientSession):
-        headers_Fotos = {
-  'Accept': '*/*',
-  'Accept-Language': 'en',
-  'Cache-Control': 'no-cache',
-  'Connection': 'keep-alive',
-  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-  'Origin': URL_SUTRAN_ORIGIN,
-  'Referer': URL_SUTRAN_CINEMOMETRO,
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-origin',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-  'X-MicrosoftAjax': 'Delta=true',
-  'X-Requested-With': 'XMLHttpRequest',
-  'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
-  'sec-ch-ua-mobile': '?0',
-  'sec-ch-ua-platform': '"Windows"',
-}
-        async with session.post(URL_SUTRAN_CINEMOMETRO, data=payload, headers=headers_Fotos) as resp:
 
+        # print(papeletas)
+        # print(numdocumento)
+        # print(idx)
+        headers_Fotos = {
+            'Accept': '*/*',
+            'Accept-Language': 'en',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Origin': URL_SUTRAN_ORIGIN,
+            'Referer': URL_SUTRAN_CINEMOMETRO,
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+            'X-MicrosoftAjax': 'Delta=true',
+            'X-Requested-With': 'XMLHttpRequest',
+            'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+        }
+        async with session.post(URL_SUTRAN_CINEMOMETRO, data=payload, headers=headers_Fotos) as resp:
+            idx = papeletas["numdocumento"].index(numdocumento)
             resp_Fotos = (await resp.text())
 
-            #Obtener src de fotos
+            # Obtener src de fotos
+            # Obtener index del documento
 
-            src= extraer_string(
+            src = extraer_string(
                 resp_Fotos, 'class="css_image1" src="data:image/jpg;base64,', '" src="%20"')
-            #lista_src.append(src)
-            src_encode = src.encode()
-            with open(numdocumento + ".png", "wb") as fh:
-                fh.write(base64.decodebytes(src_encode))
-            
-            lista_numdocumentofotos.append(numdocumento)
-            
-            
-                
 
-    async def main_fotos(lista_numdocumento_datos, lista_viewstate_datos, lista_viewstategenerator_datos,lista_eventvalidation_datos):
-        
+            src_encode = src.encode()
+            path_imagen = numdocumento + ".jpg"
+            with open(path_imagen, "wb") as fh:
+                fh.write(base64.decodebytes(src_encode))
+            lista_numdocumentofotos[idx] = numdocumento
+            lista_path[idx] = path_imagen
+            # lista_numdocumentofotos.insert(idx, numdocumento)
+            # lista_path.insert(idx, path_imagen)
+
+    async def main_fotos(lista_numdocumento_datos, lista_viewstate_datos, lista_viewstategenerator_datos, lista_eventvalidation_datos):
+
         longitud_lista_papeletas = len(lista_numdocumento_datos)
         async with aiohttp.ClientSession() as session:
             tasks_fotos = []
             for x in range(longitud_lista_papeletas):
                 #payload='__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE='+ urllib.parse.quote(lista_viewstate[x], safe="") + '&__VIEWSTATEGENERATOR='+ lista_viewstategenerator[x] +'&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION='+ urllib.parse.quote(lista_eventvalidation[x], safe="") +'&rbtListMovimiento=A&txtActa=' + numdocumento[x] + '&ddlTipoBusqueda=3&TxtBuscar=' + RUC_MB_RENTING +'&txtPlaca=&HFCodCapcha=&TxtCodImagen=' +lista_captcha[x] + '&BtnBuscar=Buscar&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1'
-                payload = 'ScriptManager1=UPDModal%7CgvCinemometro%24ctl02%24btnVer&__LASTFOCUS=&__EVENTTARGET=gvCinemometro%24ctl02%24btnVer&__EVENTARGUMENT=&__VIEWSTATE='+ urllib.parse.quote(lista_viewstate_datos[x], safe="") +'&__VIEWSTATEGENERATOR=' + lista_viewstategenerator_datos[x] + '&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION=' + urllib.parse.quote(lista_eventvalidation_datos[x], safe="") +'&rbtListMovimiento=A&txtActa=&ddlTipoBusqueda=2&TxtBuscar=&txtPlaca=&HFCodCapcha=&TxtCodImagen=&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1&__ASYNCPOST=true&'
+                payload = 'ScriptManager1=UPDModal%7CgvCinemometro%24ctl02%24btnVer&__LASTFOCUS=&__EVENTTARGET=gvCinemometro%24ctl02%24btnVer&__EVENTARGUMENT=&__VIEWSTATE=' + urllib.parse.quote(lista_viewstate_datos[x], safe="") + '&__VIEWSTATEGENERATOR=' + lista_viewstategenerator_datos[x] + '&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION=' + urllib.parse.quote(
+                    lista_eventvalidation_datos[x], safe="") + '&rbtListMovimiento=A&txtActa=&ddlTipoBusqueda=2&TxtBuscar=&txtPlaca=&HFCodCapcha=&TxtCodImagen=&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1&__ASYNCPOST=true&'
                 tasks_fotos.append(query_fotos(
                     payload, lista_numdocumento_datos[x], session=session))
             htmls_fotos = await asyncio.gather(*tasks_fotos, return_exceptions=True)
@@ -222,9 +228,9 @@ def obtener_fotos(papeletas):
                 lista_eventvalidation_datos))
 
     dict_datosfotos = {
-                    "numdocumento": lista_numdocumentofotos,
-                    
-                    "src":lista_src}
+        "numdocumento": lista_numdocumentofotos,
 
-    #print(dict_papeletas)
+        "path": lista_path}
+
+    # print(dict_papeletas)
     return dict_datosfotos

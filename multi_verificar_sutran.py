@@ -10,18 +10,16 @@ URL_SUTRAN_VERIFICAR_INFRACCION = "http://webexterno.sutran.gob.pe/GenerarTicket
 
 # Necesita tipodocumento, numdocumento y fechadocumento del dictionary listapapeletas
 def verificar_papeletas(papeletas):
-    
 
-    #longitud_listas = len(numdocumento)
-    lista_numdocumento=[]
-    lista_agenteinfractor = []
-    lista_nombreinfractor = []
-    lista_montoinfraccion = []
-    lista_montoprontopago = []
-    lista_estado = []
+    longitud_listas = len(papeletas["numdocumento"])
+    lista_numdocumento = [None]*longitud_listas
+    lista_agenteinfractor = [None]*longitud_listas
+    lista_nombreinfractor = [None]*longitud_listas
+    lista_montoinfraccion = [None]*longitud_listas
+    lista_montoprontopago = [None]*longitud_listas
+    lista_estado = [None]*longitud_listas
 
-    async def query_verificar(payload,numdocumento,session: aiohttp.ClientSession):
-
+    async def query_verificar(payload, numdocumento, session: aiohttp.ClientSession):
 
         headers_VerificarPapeleta = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -35,13 +33,13 @@ def verificar_papeletas(papeletas):
             'Upgrade-Insecure-Requests': '1',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
         }
-        async with session.post(URL_SUTRAN_VERIFICAR_INFRACCION,data=payload,headers=headers_VerificarPapeleta) as resp:
+        async with session.post(URL_SUTRAN_VERIFICAR_INFRACCION, data=payload, headers=headers_VerificarPapeleta) as resp:
 
             resp_VerificarPapeleta = (await resp.text())
             # print(data)
 
             doc_verificar = BeautifulSoup(
-            resp_VerificarPapeleta, "html.parser")
+                resp_VerificarPapeleta, "html.parser")
 
             # COLUMNAS NUEVAS
             # 3 Agente Infractor
@@ -51,7 +49,7 @@ def verificar_papeletas(papeletas):
             # 7 Estado
 
             # Obviar el primer resultado (cabecera)
-         
+
             class_tr_cabecera = "table-primary"
             for tr in doc_verificar.find_all("tr", {"class": class_tr_cabecera}):
                 tr.decompose()
@@ -60,23 +58,31 @@ def verificar_papeletas(papeletas):
 
             tr_tags = doc_verificar.find_all("tr")
 
+            # Obtener index del documento
+            idx = papeletas["numdocumento"].index(numdocumento)
+            # print(idx)
             for t in tr_tags:
                 td = t.find_all("td")
                 if td[7].text != "SIN ESTADO":
-                    lista_numdocumento.append(numdocumento)
-                    lista_agenteinfractor.append(td[3].text)
-                    lista_nombreinfractor.append(td[4].text)
-                    lista_montoinfraccion.append(td[5].text)
-                    lista_montoprontopago.append(td[6].text)
-                    lista_estado.append(td[7].text)
-
+                    lista_numdocumento[idx] = numdocumento
+                    lista_agenteinfractor[idx] = td[3].text
+                    lista_nombreinfractor[idx] = td[4].text
+                    lista_montoinfraccion[idx] = td[5].text
+                    lista_montoprontopago[idx] = td[6].text
+                    lista_estado[idx] = td[7].text
+                    # lista_numdocumento.insert(idx, numdocumento)
+                    # lista_agenteinfractor.insert(idx, td[3].text)
+                    # lista_nombreinfractor.insert(idx, td[4].text)
+                    # lista_montoinfraccion.insert(idx, td[5].text)
+                    # lista_montoprontopago.insert(idx, td[6].text)
+                    # lista_estado.insert(idx, td[7].text)
 
     async def main_verificar(papeletas):
         numdocumento = papeletas["numdocumento"]
         tipodocumento = papeletas["tipodocumento"]
         fechadocumento = papeletas["fechadocumento"]
         longitud_lista_papeletas = len(numdocumento)
-        
+
         async with aiohttp.ClientSession() as session:
 
             tasks_verificar = []
@@ -98,19 +104,19 @@ def verificar_papeletas(papeletas):
                         idTipoFormato = "999"
 
                 payload = 'Ticket.IdInfractor=0&Ticket.IdTipoFormato=' + \
-                idTipoFormato + '&Ticket.DocumentoInfraccion=' + numdocumento[x] + \
-                '&FechaInspeccion=' + \
-                urllib.parse.quote(fechadocumento[x], safe="")
+                    idTipoFormato + '&Ticket.DocumentoInfraccion=' + numdocumento[x] + \
+                    '&FechaInspeccion=' + \
+                    urllib.parse.quote(fechadocumento[x], safe="")
 
-                tasks_verificar.append(query_verificar(payload,numdocumento[x],session=session))
+                tasks_verificar.append(query_verificar(
+                    payload, numdocumento[x], session=session))
 
             htmls_verificar = await asyncio.gather(*tasks_verificar, return_exceptions=True)
 
-
     asyncio.run(main_verificar(papeletas))
 
-    dict_verificar = {"numdocumento":lista_numdocumento,
-                        "agenteinfractor": lista_agenteinfractor,
+    dict_verificar = {"numdocumento": lista_numdocumento,
+                      "agenteinfractor": lista_agenteinfractor,
                       "nombreinfractor": lista_nombreinfractor,
                       "montoinfraccion": lista_montoinfraccion,
                       "montoprontopago": lista_montoprontopago,

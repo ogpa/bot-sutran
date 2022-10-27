@@ -13,14 +13,14 @@ def extraer_string(textomaster, ini_cabecera, fin_cabecera):
     texto = textomaster[ini+len(ini_cabecera):fin]
     return texto
 
+
 def obtener_datos_papeletas(lista_placas):
-    
+
     lista_sessionid = []
     lista_captcha = []
     lista_viewstate = []
     lista_viewstategenerator = []
     lista_eventvalidation = []
-
 
     async def query_ids(session: aiohttp.ClientSession):
         async with session.get(URL_SUTRAN_HOME_INFRACCION) as resp:
@@ -28,7 +28,8 @@ def obtener_datos_papeletas(lista_placas):
             data = (await resp.text())
             # print(data)
 
-            sessionid = extraer_string(resp.headers["Set-Cookie"], "", "; path=/;")
+            sessionid = extraer_string(
+                resp.headers["Set-Cookie"], "", "; path=/;")
             # print(sessionid)
             lista_sessionid.append(sessionid)
 
@@ -52,7 +53,6 @@ def obtener_datos_papeletas(lista_placas):
             # print(eventvalidation)
             lista_eventvalidation.append(eventvalidation)
 
-
     async def mainids(lista_placas):
         longitud_lista_placas = len(lista_placas)
         async with aiohttp.ClientSession() as session:
@@ -61,19 +61,17 @@ def obtener_datos_papeletas(lista_placas):
                 tasks_ids.append(query_ids(session=session))
             htmls_ids = await asyncio.gather(*tasks_ids, return_exceptions=True)
 
-
     asyncio.run(mainids(lista_placas))
-    #print(lista_sessionid)
-    
+    # print(lista_sessionid)
+
     lista_placa = []
     lista_numdocumento = []
     lista_tipodocumento = []
     lista_fechadocumento = []
     lista_codigoinfraccion = []
     lista_clasificacion = []
-    lista_entidad=[]
-    lista_fechascan=[]
-
+    lista_entidad = []
+    lista_fechascan = []
 
     async def query_datos(payload, sessionid, placa, session: aiohttp.ClientSession):
         headers_InfoPapeleta = {
@@ -116,7 +114,6 @@ def obtener_datos_papeletas(lista_placas):
                 lista_entidad.append("SUTRAN")
                 lista_fechascan.append(datetime.today().strftime('%d/%m/%Y'))
 
-
     async def main_datos(multi_placas, lista_sessionid, lista_captcha, lista_viewstate, lista_viewstategenerator, lista_eventvalidation):
         longitud_lista_placas = len(lista_sessionid)
         async with aiohttp.ClientSession() as session:
@@ -131,15 +128,14 @@ def obtener_datos_papeletas(lista_placas):
     asyncio.run(main_datos(lista_placas, lista_sessionid, lista_captcha,
                 lista_viewstate, lista_viewstategenerator, lista_eventvalidation))
 
-
     dict_papeletas = {"placa": lista_placa,
-                    "numdocumento": lista_numdocumento,
-                    "tipodocumento": lista_tipodocumento,
-                    "fechadocumento": lista_fechadocumento,
-                    "codigoinfraccion": lista_codigoinfraccion,
-                    "clasificacion": lista_clasificacion,
-                    "entidad":lista_entidad,
-                    "fechascan":lista_fechascan}
+                      "numdocumento": lista_numdocumento,
+                      "tipodocumento": lista_tipodocumento,
+                      "fechadocumento": lista_fechadocumento,
+                      "codigoinfraccion": lista_codigoinfraccion,
+                      "clasificacion": lista_clasificacion,
+                      "entidad": lista_entidad,
+                      "fechascan": lista_fechascan}
 
-    #print(dict_papeletas)
+    # print(dict_papeletas)
     return dict_papeletas
