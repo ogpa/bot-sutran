@@ -3,6 +3,7 @@ from multi_verificar_sutran import verificar_papeletas
 from multi_cinemometro_foto_v2 import obtener_fotos
 import pandas as pd
 # 48 placas
+# xd
 lista_placas = ["BLV785", "BKD764", "BDN910", "BEB884", "BEB741", "BHM942", "ATE776", "ATE778", "ATE880", "ATE914", "ATE937" "ATE938", "ATE939", "ATE940", "ATF713", "ATF714",
                 "ATF715", "ATF716", "ATF720", "ATF730", "ATF747", "ATF748", "ATF749", "ATF752", "ATF761", "ATF762", "ATF763", "ATF765",
                 "ATF777", "ATF789", "ATF790", "ATF791", "ATF792", "ATF837", "ATF841", "ATF842", "ATF843", "ATF845",
