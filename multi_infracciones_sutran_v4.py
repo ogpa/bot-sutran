@@ -7,7 +7,7 @@ from datetime import datetime
 
 URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_HOME_INFRACCION = "http://webexterno.sutran.gob.pe/WebExterno/Pages/frmRecordInfracciones.aspx"
-CANT_REQUESTS_PARALELO = 1
+CANT_REQUESTS_PARALELO = 50
 
 
 def extraer_string(textomaster, ini_cabecera, fin_cabecera):
