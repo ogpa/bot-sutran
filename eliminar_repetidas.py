@@ -1,27 +1,15 @@
 import boto3
-
+from query_papeletas import query_papeletas
 client = boto3.client("dynamodb")
 
 
 def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas):
-    response_papeletas = client.scan(
-        TableName=tabla_papeletas,
-        ProjectionExpression='#i,#p,#d,#n',
-        ExpressionAttributeNames={
-            "#i": "id",
-            "#p": "placa",
-            "#d": "_deleted",
-            "#n": "num_documento"
-        },
-        FilterExpression='#d <> :d',
-        ExpressionAttributeValues={":d": {"BOOL": True}}
-
-    )
+    response_papeletas = query_papeletas(tabla_papeletas)
 
     lista_papeletas_scaneadas = dict_papeletas_scaneadas["numdocumento"]
     lista_papeletas_existentes = []
 
-    for p in response_papeletas["Items"]:
+    for p in response_papeletas:
         lista_papeletas_existentes.append(p["num_documento"]["S"])
 
     s = set(lista_papeletas_existentes)
@@ -29,7 +17,6 @@ def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas):
         x for x in lista_papeletas_scaneadas if x not in s]
 
     # Guardo los index de la lista de papeletas scaneadas
-    # ['2450293528', '2450291852']
 
     lista_placa_nuevas = []
     lista_numdocumento_nuevas = []
@@ -61,6 +48,8 @@ def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas):
                     dict_papeletas_scaneadas["entidad"][idx])
                 lista_fechascan_nuevas.append(
                     dict_papeletas_scaneadas["fechascan"][idx])
+                lista_fechascan_nuevas.append(
+                    dict_papeletas_scaneadas["fechascan"][idx])
 
     dict_papeletas_nuevas = {
         "placa": lista_placa_nuevas,
@@ -70,6 +59,7 @@ def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas):
         "codigoinfraccion": lista_codigoinfraccion_nuevas,
         "clasificacion": lista_clasificacion_nuevas,
         "entidad": lista_entidad_nuevas,
-        "fechascan": lista_fechascan_nuevas
+        "fechascan": lista_fechascan_nuevas,
+
     }
     return dict_papeletas_nuevas

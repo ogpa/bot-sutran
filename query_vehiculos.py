@@ -13,11 +13,15 @@ client = boto3.client("dynamodb")
 def query_vehiculos(tabla_vehiculos):
     response_vehiculos = client.scan(
         TableName=tabla_vehiculos,
-        ProjectionExpression='#i,#p,#c',
+        ProjectionExpression='#i,#p,#c,#d',
         ExpressionAttributeNames={
             "#i": "id",
             "#p": "placa",
-            "#c": "clienteID"}
+            "#c": "clienteID",
+            "#d": "_deleted"},
+        FilterExpression='#d <> :d',
+        ExpressionAttributeValues={":d": {"BOOL": True}}
+
     )
     # print(response_vehiculos["Items"])
     return (response_vehiculos["Items"])

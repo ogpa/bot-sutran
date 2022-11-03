@@ -108,26 +108,6 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
             # # 2 Fecha de documento
             # # 3 Código de infracción
             # # 4 Clasificación
-            # style_tr_datospapeleta_parcial = "color:#333333;background-color:#F0F0F0;border-color:Silver;"
-
-            # tr_tags = doc.find_all(
-            #     "tr", style=lambda tipo: tipo and style_tr_datospapeleta_parcial in tipo)
-            # # print(tr_tags)
-
-            # for t in tr_tags:
-            #     td = t.find_all("td")
-
-            #     lista_numdocumento.append(td[0].text)
-            #     lista_verfoto.append(td[8].text)
-
-            # sessionid = extraer_string(resp.headers["Set-Cookie"], "", "; path=/;")
-            # # print(sessionid)
-            # lista_sessionid.append(sessionid)
-
-            # captcha = extraer_string(
-            #     resp_InfoPapeleta, 'scrolling="no" src="Captcha.aspx?numAleatorio=', '" width="')
-            # # print(captcha)
-            # lista_captcha.append(captcha)
 
             viewstate = extraer_string(
                 resp_InfoPapeleta, 'name="__VIEWSTATE" id="__VIEWSTATE" value="', '" />')
@@ -225,13 +205,6 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
                 tasks_fotos.append(query_fotos(
                     payload, lista_numdocumento_datos[x], lista_placa_datos[x], lista_fechadocumento_datos[x], session=session))
             htmls_fotos = await asyncio.gather(*tasks_fotos, return_exceptions=True)
-
-    # lista_numdocumento = []
-    # lista_verfoto = []
-    # lista_viewstate_datos = []
-    # lista_viewstategenerator_datos=[]
-    # lista_eventvalidation_datos=[]
-    # lista_numdocumento_datos = []
 
     asyncio.run(main_fotos(lista_numdocumento_datos, lista_viewstate_datos, lista_viewstategenerator_datos,
                 lista_eventvalidation_datos, lista_placa_datos, lista_fechadocumento_datos))
