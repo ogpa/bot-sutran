@@ -2,9 +2,8 @@ import urllib
 from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
-from datetime import datetime
-
-
+#from datetime import datetime
+import datetime
 URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_HOME_INFRACCION = "http://webexterno.sutran.gob.pe/WebExterno/Pages/frmRecordInfracciones.aspx"
 CANT_REQUESTS_PARALELO = 50
@@ -83,6 +82,7 @@ def obtener_datos_papeletas(lista_placas):
     lista_clasificacion = []
     lista_entidad = []
     lista_fechascan = []
+    fecha_scan = datetime.datetime.today().strftime("%Y-%m-%d")
 
     async def query_datos(payload, sessionid, placa, session: aiohttp.ClientSession):
         headers_InfoPapeleta = {
@@ -116,14 +116,22 @@ def obtener_datos_papeletas(lista_placas):
 
             for t in tr_tags:
                 td = t.find_all("td")
+                fecha = td[2].text
+                fecha_doc = datetime.datetime.strptime(
+                    fecha, '%d/%m/%Y').strftime('%Y-%m-%d')
+                # print(fecha)
+                # print(fecha_doc)
+
                 lista_placa.append(placa)
                 lista_numdocumento.append(td[0].text)
                 lista_tipodocumento.append(td[1].text)
-                lista_fechadocumento.append(td[2].text)
+                # lista_fechadocumento.append(td[2].text)
+                # Convierte la fecha de d/m/y a y-m-d
+                lista_fechadocumento.append(fecha_doc)
                 lista_codigoinfraccion.append(td[3].text)
                 lista_clasificacion.append(td[4].text)
                 lista_entidad.append("SUTRAN")
-                lista_fechascan.append(datetime.today().strftime('%d/%m/%Y'))
+                lista_fechascan.append(fecha_scan)
 
     async def main_datos(multi_placas, lista_sessionid, lista_captcha, lista_viewstate, lista_viewstategenerator, lista_eventvalidation):
         longitud_lista_placas = len(lista_sessionid)

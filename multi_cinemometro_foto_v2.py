@@ -16,7 +16,7 @@ def extraer_string(textomaster, ini_cabecera, fin_cabecera):
     return texto
 
 
-def obtener_fotos(papeletas):
+def obtener_fotos(papeletas, bucket_s3, path_public):
 
     lista_sessionid = []
     lista_captcha = []
@@ -74,8 +74,10 @@ def obtener_fotos(papeletas):
     lista_viewstategenerator_datos = []
     lista_eventvalidation_datos = []
     lista_numdocumento_datos = []
+    lista_placa_datos = []
+    lista_fechadocumento_datos = []
 
-    async def query_datos(payload, sessionid, numdocumento, session: aiohttp.ClientSession):
+    async def query_datos(payload, sessionid, numdocumento, placa, fechadocumento, session: aiohttp.ClientSession):
         headers_Datos = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
             'Accept-Language': 'en',
@@ -142,9 +144,13 @@ def obtener_fotos(papeletas):
             # print(eventvalidation)
             lista_eventvalidation_datos.append(eventvalidation)
             lista_numdocumento_datos.append(numdocumento)
+            lista_placa_datos.append(placa)
+            lista_fechadocumento_datos.append(fechadocumento)
 
     async def main_datos(papeletas, lista_sessionid, lista_captcha, lista_viewstate, lista_viewstategenerator, lista_eventvalidation):
         numdocumento = papeletas["numdocumento"]
+        placa = papeletas["placa"]
+        fechadocumento = papeletas["fechadocumento"]
         longitud_lista_placas = len(lista_sessionid)
         async with aiohttp.ClientSession() as session:
             tasks_datos = []
@@ -152,7 +158,7 @@ def obtener_fotos(papeletas):
                 payload = '__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=' + urllib.parse.quote(lista_viewstate[x], safe="") + '&__VIEWSTATEGENERATOR=' + lista_viewstategenerator[x] + '&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION=' + urllib.parse.quote(
                     lista_eventvalidation[x], safe="") + '&rbtListMovimiento=A&txtActa=' + numdocumento[x] + '&ddlTipoBusqueda=3&TxtBuscar=' + RUC_MB_RENTING + '&txtPlaca=&HFCodCapcha=&TxtCodImagen=' + lista_captcha[x] + '&BtnBuscar=Buscar&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1'
                 tasks_datos.append(query_datos(
-                    payload, lista_sessionid[x], numdocumento[x], session=session))
+                    payload, lista_sessionid[x], numdocumento[x], placa[x], fechadocumento[x], session=session))
             htmls_datos = await asyncio.gather(*tasks_datos, return_exceptions=True)
 
     asyncio.run(main_datos(papeletas, lista_sessionid, lista_captcha,
@@ -160,9 +166,10 @@ def obtener_fotos(papeletas):
 
     longitud_numdocumento = len(papeletas["numdocumento"])
     lista_path = [None]*longitud_numdocumento
+    lista_path_s3 = [None]*longitud_numdocumento
     lista_numdocumentofotos = [None]*longitud_numdocumento
 
-    async def query_fotos(payload, numdocumento, session: aiohttp.ClientSession):
+    async def query_fotos(payload, numdocumento, placa, fechadocumento, session: aiohttp.ClientSession):
 
         # print(papeletas)
         # print(numdocumento)
@@ -196,15 +203,17 @@ def obtener_fotos(papeletas):
                 resp_Fotos, 'class="css_image1" src="data:image/jpg;base64,', '" src="%20"')
 
             src_encode = src.encode()
-            path_imagen = numdocumento + ".jpg"
+            path_imagen = placa + "_" + fechadocumento + "_" + numdocumento + ".jpg"
             with open(path_imagen, "wb") as fh:
                 fh.write(base64.decodebytes(src_encode))
             lista_numdocumentofotos[idx] = numdocumento
             lista_path[idx] = path_imagen
+            lista_path_s3[idx] = "https://" + bucket_s3 + \
+                ".s3.amazonaws.com/" + path_public + path_imagen
             # lista_numdocumentofotos.insert(idx, numdocumento)
             # lista_path.insert(idx, path_imagen)
 
-    async def main_fotos(lista_numdocumento_datos, lista_viewstate_datos, lista_viewstategenerator_datos, lista_eventvalidation_datos):
+    async def main_fotos(lista_numdocumento_datos, lista_viewstate_datos, lista_viewstategenerator_datos, lista_eventvalidation_datos, lista_placa_datos, lista_fechadocumento_datos):
 
         longitud_lista_papeletas = len(lista_numdocumento_datos)
         async with aiohttp.ClientSession() as session:
@@ -214,7 +223,7 @@ def obtener_fotos(papeletas):
                 payload = 'ScriptManager1=UPDModal%7CgvCinemometro%24ctl02%24btnVer&__LASTFOCUS=&__EVENTTARGET=gvCinemometro%24ctl02%24btnVer&__EVENTARGUMENT=&__VIEWSTATE=' + urllib.parse.quote(lista_viewstate_datos[x], safe="") + '&__VIEWSTATEGENERATOR=' + lista_viewstategenerator_datos[x] + '&__VIEWSTATEENCRYPTED=&__EVENTVALIDATION=' + urllib.parse.quote(
                     lista_eventvalidation_datos[x], safe="") + '&rbtListMovimiento=A&txtActa=&ddlTipoBusqueda=2&TxtBuscar=&txtPlaca=&HFCodCapcha=&TxtCodImagen=&HfNumAleatorioAcceso=&HiddenField2=&tipobusqueda1=rbtRecogerSutran1&__ASYNCPOST=true&'
                 tasks_fotos.append(query_fotos(
-                    payload, lista_numdocumento_datos[x], session=session))
+                    payload, lista_numdocumento_datos[x], lista_placa_datos[x], lista_fechadocumento_datos[x], session=session))
             htmls_fotos = await asyncio.gather(*tasks_fotos, return_exceptions=True)
 
     # lista_numdocumento = []
@@ -225,12 +234,12 @@ def obtener_fotos(papeletas):
     # lista_numdocumento_datos = []
 
     asyncio.run(main_fotos(lista_numdocumento_datos, lista_viewstate_datos, lista_viewstategenerator_datos,
-                lista_eventvalidation_datos))
+                lista_eventvalidation_datos, lista_placa_datos, lista_fechadocumento_datos))
 
     dict_datosfotos = {
         "numdocumento": lista_numdocumentofotos,
-
-        "path": lista_path}
+        "path": lista_path,
+        "path_s3": lista_path_s3}
 
     # print(dict_papeletas)
     return dict_datosfotos
