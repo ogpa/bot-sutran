@@ -1,11 +1,9 @@
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 import boto3
 
 client = boto3.client("dynamodb")
 
-#tabla_papeletas = "Papeleta-lantl5egqfformu4wl5ale7p6e-dev"
+tabla_papeletas = "Papeleta-lantl5egqfformu4wl5ale7p6e-dev"
 
 # Se deben obviar los que tengan _deleted = true
 
@@ -24,8 +22,8 @@ def query_papeletas(tabla_papeletas):
         ExpressionAttributeValues={":d": {"BOOL": True}}
 
     )
-    # print(response_vehiculos["Items"])
-    return (response_vehiculos["Items"])
+    print(response_vehiculos["Items"])
+    # return (response_vehiculos["Items"])
 
 
-# query_papeletas(tabla_papeletas)
+query_papeletas(tabla_papeletas)

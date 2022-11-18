@@ -14,8 +14,9 @@ lista_write_callao = []
 
 createdupdatedAt = str(datetime.datetime.now(timezone.utc))[
     :-9].replace(" ", "T") + "Z"
-lastChangedAt = str(round(time.time() * 1000))
+lastChangedAt = str(round(time.time() * 1000)+25)
 fechascan = time.strftime("%Y-%m-%d")
+print(createdupdatedAt)
 
 
 def subir_dynamodb(tabla_papeletas, papeletas, lista_id_query, lista_placa_query):
@@ -39,21 +40,27 @@ def subir_dynamodb(tabla_papeletas, papeletas, lista_id_query, lista_placa_query
                         "destinatarios_correoenviado": {"L": []},
                         "deuda_atu": {"NULL": True},
                         "deuda_ofisat": {"NULL": True},
+                        "docidentidad": {"NULL": True},
                         "dscto_2": {"NULL": True},
                         "dscto_ofisat": {"NULL": True},
+                        "dscto_webbancos": {"NULL": True},
                         "entidad": {"S": "SUTRAN"},  # Fijo para SUTRAN
                         "estado_entidad": {"S": papeletas["estado"][x]},
                         # Este se puede dejar como valor default
                         "estado_mbr": {"S": "Pendiente de pago"},
                         "fechascan": {"S": papeletas["fechascan"][x]},
                         "fecha_correoenviado": {"NULL": True},
+                        "hora_correoenviado": {"NULL": True},
+                        "horascan": {"NULL": True},
                         "fecha_documento": {"S": papeletas["fechadocumento"][x]},
                         "gast_cost": {"NULL": True},
+                        "licencia_conducir": {"NULL": True},
                         "monto_infraccion": {"N": papeletas["montoinfraccion"][x]},
                         "monto_prontopago": {"N": papeletas["montoprontopago"][x]},
                         "nombre_infractor": {"S": papeletas["nombreinfractor"][x]},
                         "num_documento": {"S": papeletas["numdocumento"][x]},
                         "reglamento": {"NULL": True},
+                        "tipo_docidentidad": {"NULL": True},
                         "tipo_documento": {"S": papeletas["tipodocumento"][x]},
                         # Igual al createdAt
                         "updatedAt": {"S": createdupdatedAt},
@@ -63,7 +70,8 @@ def subir_dynamodb(tabla_papeletas, papeletas, lista_id_query, lista_placa_query
                         "vehiculoID": {"S": vehiculoID},
                         "_lastChangedAt": {"N": lastChangedAt},
                         "_version": {"N": "1"},
-                        "__typename": {"S": "Papeleta"}  # Fijo
+                        "__typename": {"S": "Papeleta"},  # Fijo
+                        "_deleted": {"BOOL": False}
                     }
                 }}
                 lista_write_sutran.append(pr_sutran)

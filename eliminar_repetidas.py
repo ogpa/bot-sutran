@@ -1,16 +1,16 @@
 import boto3
-from query_papeletas import query_papeletas
+from query_papeletas_v2_graphql import query_papeletas
 client = boto3.client("dynamodb")
 
 
-def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas):
-    response_papeletas = query_papeletas(tabla_papeletas)
+def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas, endpoint, api_key):
+    response_papeletas = query_papeletas(tabla_papeletas, endpoint, api_key)
 
     lista_papeletas_scaneadas = dict_papeletas_scaneadas["numdocumento"]
     lista_papeletas_existentes = []
 
-    for p in response_papeletas:
-        lista_papeletas_existentes.append(p["num_documento"]["S"])
+    for p in response_papeletas["data"]["listPapeletas"]["items"]:
+        lista_papeletas_existentes.append(p["num_documento"])
 
     s = set(lista_papeletas_existentes)
     lista_papeletas_nuevas = [
