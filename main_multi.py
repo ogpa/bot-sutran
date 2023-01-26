@@ -1,7 +1,7 @@
-from multi_infracciones_sutran_v4 import obtener_datos_papeletas
-from multi_verificar_sutran_v2 import verificar_papeletas
-from multi_cinemometro_foto_v2 import obtener_fotos
-from query_vehiculos_v2_graphql import query_vehiculos
+from multi_infracciones_sutran import obtener_datos_papeletas
+from multi_verificar_sutran import verificar_papeletas
+from multi_cinemometro_foto import obtener_fotos
+from query_vehiculos_graphql import query_vehiculos
 from eliminar_repetidas import eliminar_repetidas
 from subir_archivos import subir_archivos
 from subir_graphql import subir_graphql
@@ -17,7 +17,7 @@ API_KEY = "da2-rcfdc2v4ezezjgdubivb4qwhba"
 # Es una lista de placa, cliente y vehiculoID en JSON
 lista_vehiculos_query = query_vehiculos(
     NOMBRE_TABLA_VEHICULOS, GRAPHQL_ENDPOINT, API_KEY)
-
+# print(lista_vehiculos_query)
 # Tabla placas
 # De la lista de placas, debo obtener el valor del cliente. Como un vlookup
 # Del valor cliente, obtener el supervisor y su correo
@@ -67,8 +67,8 @@ if (len(dict_papeletas_nuevas["numdocumento"]) > 0):
     del dict_fotos["numdocumento"]
 
     papeletas_dict = dict_verificar_nuevas | dict_fotos
-    print("papeletas_dict")
-    print(papeletas_dict)
+    # print("papeletas_dict")
+    # print(papeletas_dict)
     # Para los correos necesito:
     # Cliente, placas, fechas, monto, monto pronto pago, numdocumento, path /tmp/ (para adjuntar el archivo), correo supervisor, correo comercial
     c = listar_correos(papeletas_dict, GRAPHQL_ENDPOINT, API_KEY)
@@ -78,6 +78,7 @@ if (len(dict_papeletas_nuevas["numdocumento"]) > 0):
     enviar_correos(lista_para_enviar_correos)
     subir_graphql(NOMBRE_TABLA_PAPELETAS, papeletas_con_correo,
                   lista_id_query, lista_placa_query, GRAPHQL_ENDPOINT, API_KEY)
+    print(papeletas_dict)
     subir_archivos(NOMBRE_BUCKET_S3, PATH_PUBLIC, papeletas_dict)
 
 

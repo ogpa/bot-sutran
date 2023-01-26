@@ -11,7 +11,6 @@ mutation operation($input: CreatePapeletaInput!) {
     monto_infraccion
     monto_prontopago
     estado_entidad
-    url_doc
     url_docsextra
     reglamento
     gast_cost
@@ -42,6 +41,7 @@ mutation operation($input: CreatePapeletaInput!) {
     placa
     createdAt
     updatedAt
+    estado_json
     _version
     _lastChangedAt
     _deleted
@@ -86,7 +86,7 @@ def subir_graphql(tabla_papeletas, papeletas, lista_id_query, lista_placa_query,
     "destinatarios_correoenviado": [""" + d_c + """],
     "entidad": "SUTRAN",
     "estado_entidad": """ + '"' + papeletas["estado"][x] + '"' + """,
-    "estado_mbr": "Pendiente de pago",
+    "estado_mbr": "Pendiente",
     "fechascan": """ + '"' + papeletas["fechascan"][x] + '"' + """,
     "fecha_documento": """ + '"' + papeletas["fechadocumento"][x] + '"' + """,
     "fecha_infraccion": """ + '"' + papeletas["fechadocumento"][x] + '"' + """,
@@ -98,8 +98,8 @@ def subir_graphql(tabla_papeletas, papeletas, lista_id_query, lista_placa_query,
     "num_documento": """ + '"' + papeletas["numdocumento"][x] + '"' + """,
     "placa":  """ + '"' + papeletas["placa"][x] + '"' + """,
     "tipo_documento": """ + '"' + papeletas["tipodocumento"][x] + '"' + """,
-    "url_doc": """ + '"' + papeletas["path_s3"][x] + '"' + """,
-    "vehiculoID": """ + '"' + vehiculoID + '"' + """
+    "vehiculoID": """ + '"' + vehiculoID + '"' + """,
+    "estado_json":[\"{\\\"Pendiente\\\":{\\\"fecha_inicio\\\":\\\"""" + papeletas["fechadocumento"][x] + """\\\",\\\"url_doc\\\":\\\"public/""" + papeletas["placa"][x] + "/Papeletas/" + papeletas["numdocumento"][x] + "Papeleta_" + papeletas["path"][x] + """\\\"}}\"]
   }
 }"""
                 # print(variables)

@@ -1,5 +1,5 @@
 import boto3
-from query_papeletas_v2_graphql import query_papeletas
+from query_papeletas_graphql import query_papeletas
 client = boto3.client("dynamodb")
 
 

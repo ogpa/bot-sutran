@@ -1,8 +1,6 @@
 import urllib
-from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
-from datetime import datetime
 import base64
 URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_CINEMOMETRO = "https://webexterno.sutran.gob.pe/WebExterno/Pages/frmPapeletasCinemometro.aspx"
@@ -146,7 +144,7 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
 
     longitud_numdocumento = len(papeletas["numdocumento"])
     lista_path = [None]*longitud_numdocumento
-    lista_path_s3 = [None]*longitud_numdocumento
+    #lista_path_s3 = [None]*longitud_numdocumento
     lista_numdocumentofotos = [None]*longitud_numdocumento
 
     async def query_fotos(payload, numdocumento, placa, fechadocumento, session: aiohttp.ClientSession):
@@ -183,13 +181,49 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
                 resp_Fotos, 'class="css_image1" src="data:image/jpg;base64,', '" src="%20"')
 
             src_encode = src.encode()
-            path_imagen = placa + "_" + fechadocumento + "_" + numdocumento + ".jpg"
+
+            # Cambiar formato de fecha documento de 2023-01-25 a 25-01-2023 para que el path sea más fácil de leer
+
+            # fechadocumento_anho = extraer_string(fechadocumento,"","-")
+            fechadocumento_mes = extraer_string(fechadocumento, "-", "-")
+            # fechadocumento_dia = extraer_string(fechadocumento,"-","")
+            # fechadocumento_path = fechadocumento_dia + "-" + fechadocumento_mes + "-" + fechadocumento_anho
+
+            if fechadocumento_mes == "01":
+                nombre_mes = "Enero"
+            elif fechadocumento_mes == "02":
+                nombre_mes = "Febrero"
+            elif fechadocumento_mes == "03":
+                nombre_mes = "Marzo"
+            elif fechadocumento_mes == "04":
+                nombre_mes = "Abril"
+            elif fechadocumento_mes == "05":
+                nombre_mes = "Mayo"
+            elif fechadocumento_mes == "06":
+                nombre_mes = "Junio"
+            elif fechadocumento_mes == "07":
+                nombre_mes = "Julio"
+            elif fechadocumento_mes == "08":
+                nombre_mes = "Agosto"
+            elif fechadocumento_mes == "09":
+                nombre_mes = "Setiembre"
+            elif fechadocumento_mes == "10":
+                nombre_mes = "Octubre"
+            elif fechadocumento_mes == "11":
+                nombre_mes = "Noviembre"
+            elif fechadocumento_mes == "12":
+                nombre_mes = "Diciembre"
+
+            fechadocumento_path = fechadocumento.replace(
+                "-" + fechadocumento_mes + "-", "-" + nombre_mes + "-")
+
+            path_imagen = placa + "_" + fechadocumento_path + "_" + numdocumento + ".jpg"
             with open(path_imagen, "wb") as fh:
                 fh.write(base64.decodebytes(src_encode))
             lista_numdocumentofotos[idx] = numdocumento
             lista_path[idx] = path_imagen
-            lista_path_s3[idx] = "https://" + bucket_s3 + \
-                ".s3.amazonaws.com/" + path_public + path_imagen
+            # lista_path_s3[idx] = "https://" + bucket_s3 + \
+            #    ".s3.amazonaws.com/" + path_public + path_imagen
             # lista_numdocumentofotos.insert(idx, numdocumento)
             # lista_path.insert(idx, path_imagen)
 
@@ -211,8 +245,8 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
 
     dict_datosfotos = {
         "numdocumento": lista_numdocumentofotos,
-        "path": lista_path,
-        "path_s3": lista_path_s3}
+        "path": lista_path
+    }
 
     # print(dict_papeletas)
     return dict_datosfotos
