@@ -1,15 +1,14 @@
-
 import urllib
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
-
+import datetime
 URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_VERIFICAR_INFRACCION = "http://webexterno.sutran.gob.pe/GenerarTicket"
 
 
 # Necesita tipodocumento, numdocumento y fechadocumento del dictionary listapapeletas
-def verificar_papeletas(papeletas):
+def verificar_papeletas(papeletas, lista_vehiculos_query):
 
     longitud_listas = len(papeletas["numdocumento"])
     lista_numdocumento = [None]*longitud_listas
@@ -18,8 +17,9 @@ def verificar_papeletas(papeletas):
     lista_montoinfraccion = [None]*longitud_listas
     lista_montoprontopago = [None]*longitud_listas
     lista_estado = [None]*longitud_listas
+    lista_cliente = [None]*longitud_listas
 
-    async def query_verificar(payload, numdocumento, session: aiohttp.ClientSession):
+    async def query_verificar(payload, numdocumento, placa, session: aiohttp.ClientSession):
 
         headers_VerificarPapeleta = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -36,7 +36,7 @@ def verificar_papeletas(papeletas):
         async with session.post(URL_SUTRAN_VERIFICAR_INFRACCION, data=payload, headers=headers_VerificarPapeleta) as resp:
 
             resp_VerificarPapeleta = (await resp.text())
-            # print(data)
+            # print(resp_VerificarPapeleta)
 
             doc_verificar = BeautifulSoup(
                 resp_VerificarPapeleta, "html.parser")
@@ -59,10 +59,16 @@ def verificar_papeletas(papeletas):
             tr_tags = doc_verificar.find_all("tr")
 
             # Obtener index del documento
+
             idx = papeletas["numdocumento"].index(numdocumento)
+            for v in lista_vehiculos_query:
+                if v["placa"] == placa:
+                    cliente = v["cliente"]
+
             # print(idx)
             for t in tr_tags:
                 td = t.find_all("td")
+
                 if td[7].text != "SIN ESTADO":
                     lista_numdocumento[idx] = numdocumento
                     lista_agenteinfractor[idx] = td[3].text
@@ -70,6 +76,7 @@ def verificar_papeletas(papeletas):
                     lista_montoinfraccion[idx] = td[5].text
                     lista_montoprontopago[idx] = td[6].text
                     lista_estado[idx] = td[7].text
+                    lista_cliente[idx] = cliente
                     # lista_numdocumento.insert(idx, numdocumento)
                     # lista_agenteinfractor.insert(idx, td[3].text)
                     # lista_nombreinfractor.insert(idx, td[4].text)
@@ -81,6 +88,7 @@ def verificar_papeletas(papeletas):
         numdocumento = papeletas["numdocumento"]
         tipodocumento = papeletas["tipodocumento"]
         fechadocumento = papeletas["fechadocumento"]
+        placa = papeletas["placa"]
         longitud_lista_papeletas = len(numdocumento)
 
         async with aiohttp.ClientSession() as session:
@@ -102,14 +110,16 @@ def verificar_papeletas(papeletas):
                         idTipoFormato = "4"
                     case _:
                         idTipoFormato = "999"
-
+                fecha = datetime.datetime.strptime(
+                    fechadocumento[x], "%Y-%m-%d").strftime("%d/%m/%Y")
+                # print(fecha)
                 payload = 'Ticket.IdInfractor=0&Ticket.IdTipoFormato=' + \
                     idTipoFormato + '&Ticket.DocumentoInfraccion=' + numdocumento[x] + \
                     '&FechaInspeccion=' + \
-                    urllib.parse.quote(fechadocumento[x], safe="")
+                    urllib.parse.quote(fecha, safe="")
 
                 tasks_verificar.append(query_verificar(
-                    payload, numdocumento[x], session=session))
+                    payload, numdocumento[x], placa[x], session=session))
 
             htmls_verificar = await asyncio.gather(*tasks_verificar, return_exceptions=True)
 
@@ -120,6 +130,7 @@ def verificar_papeletas(papeletas):
                       "nombreinfractor": lista_nombreinfractor,
                       "montoinfraccion": lista_montoinfraccion,
                       "montoprontopago": lista_montoprontopago,
-                      "estado": lista_estado}
+                      "estado": lista_estado,
+                      "cliente": lista_cliente}
 
     return dict_verificar

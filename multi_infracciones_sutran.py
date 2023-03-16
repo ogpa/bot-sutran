@@ -1,11 +1,12 @@
-import requests
 import urllib
 from bs4 import BeautifulSoup
 import asyncio
-import aiohttp  # pip install aiohttp aiodns
+import aiohttp
+#from datetime import datetime
+import datetime
 URL_SUTRAN_ORIGIN = "http://webexterno.sutran.gob.pe"
 URL_SUTRAN_HOME_INFRACCION = "http://webexterno.sutran.gob.pe/WebExterno/Pages/frmRecordInfracciones.aspx"
-NUM_CALLS = 10
+CANT_REQUESTS_PARALELO = 50
 
 
 def extraer_string(textomaster, ini_cabecera, fin_cabecera):
@@ -15,158 +16,145 @@ def extraer_string(textomaster, ini_cabecera, fin_cabecera):
     return texto
 
 
-async def get(
-    session: aiohttp.ClientSession,
-) -> dict:
-    url = URL_SUTRAN_HOME_INFRACCION
-    print(f"Requesting {url}")
-    resp_HomeInfraccion = await session.request('GET', url=url)
-    # Note that this may raise an exception for non-2xx responses
-    # You can either handle that here, or pass the exception through
-    # data = await resp.text
+def obtener_datos_papeletas(lista_placas):
 
-    data = await resp_HomeInfraccion.json()
-    # print(f"Received data for {url}")
-    # sessionid = extraer_string(
-    #     resp_HomeInfraccion.headers["Set-Cookie"], "", "; path=/;")
-    # # print(sessionid)
-    # captcha = extraer_string(
-    #     resp_HomeInfraccion.text, 'scrolling="no" src="Captcha.aspx?numAleatorio=', '" width="')
-    # # print(captcha)
+    lista_sessionid = []
+    lista_captcha = []
+    lista_viewstate = []
+    lista_viewstategenerator = []
+    lista_eventvalidation = []
 
-    # viewstate = extraer_string(
-    #     resp_HomeInfraccion.text, 'name="__VIEWSTATE" id="__VIEWSTATE" value="', '" />')
-    # # print(viewstate)
+    # async def query_ids(session: aiohttp.ClientSession):
+    async def query_ids(limite):
+        async with limite:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(URL_SUTRAN_HOME_INFRACCION) as response:
 
-    # viewstategenerator = extraer_string(
-    #     resp_HomeInfraccion.text, 'name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="', '" />')
-    # # print(viewstate)
+                    data = (await response.text())
+                    # print(data)
 
-    # eventvalidation = extraer_string(
-    #     resp_HomeInfraccion.text, 'name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="', '" />')
-    # print(eventvalidation)
-    # return resp_HomeInfraccion, captcha, viewstate, viewstategenerator, eventvalidation
-    return resp_HomeInfraccion.text
+                    sessionid = extraer_string(
+                        response.headers["Set-Cookie"], "", "; path=/;")
+                    print(sessionid)
+                    lista_sessionid.append(sessionid)
 
+                    captcha = extraer_string(
+                        data, 'scrolling="no" src="Captcha.aspx?numAleatorio=', '" width="')
+                    # print(captcha)
+                    lista_captcha.append(captcha)
 
-async def main(multi_placas):
-    longitud_lista_placas = len(multi_placas)
-    # Asynchronous context manager.  Prefer this rather
-    # than using a different session for each GET request
-    # Del primer multi obtengo los sessionid, viewstate, etc, etc
-    async with aiohttp.ClientSession() as session:
-        tasks = []
+                    viewstate = extraer_string(
+                        data, 'name="__VIEWSTATE" id="__VIEWSTATE" value="', '" />')
+                    # print(viewstate)
+                    lista_viewstate.append(viewstate)
+
+                    viewstategenerator = extraer_string(
+                        data, 'name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="', '" />')
+                    # print(viewstategenerator)
+                    lista_viewstategenerator.append(viewstategenerator)
+
+                    eventvalidation = extraer_string(
+                        data, 'name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="', '" />')
+                    # print(eventvalidation)
+                    lista_eventvalidation.append(eventvalidation)
+
+    async def mainids(lista_placas):
+        limite = asyncio.Semaphore(CANT_REQUESTS_PARALELO)
+        longitud_lista_placas = len(lista_placas)
+        tasks_ids = []
+
         for x in range(longitud_lista_placas):
-            tasks.append(get(session=session))
-        # asyncio.gather() will wait on the entire task set to be
-        # completed.  If you want to process results greedily as they come in,
-        # loop over asyncio.as_completed()
-        # Del primer multi obtengo los sessionid, viewstate, etc, etc
-        # for d in asyncio.as_completed(*tasks):
-        #     session = extraer_string(d.headers["Set-Cookie"], "", "; path=/;")
-        #     print(session)
-        print(tasks)
-        # Aquí se ejecutan los tasks
-        htmls = await asyncio.gather(*tasks, return_exceptions=True)
-        lista_viewstate = []
-        for h in htmls:
-            print(h)
-        return htmls
+            tasks_ids.append(query_ids(limite))
+        htmls_ids = await asyncio.gather(*tasks_ids, return_exceptions=True)
 
-if __name__ == '__main__':
-    # colors = ['red', 'blue', 'green']  # ...
-    # Either take colors from stdin or make some default here
-    multi_placas = ["BLV785", "AVE847", "BDN910"]
-    multi_respuestas = asyncio.run(main(multi_placas))  # Python 3.7+
-    print(multi_respuestas)
+    # asyncio.run(mainids(lista_placas))
 
-# def obtener_datos_papeletas(lista_placas):
-#     lista_placa = []
-#     lista_numdocumento = []
-#     lista_tipodocumento = []
-#     lista_fechadocumento = []
-#     lista_codigoinfraccion = []
-#     lista_clasificacion = []
-#     for p in lista_placas:
-#         resp_HomeInfraccion = requests.request(
-#             "GET", URL_SUTRAN_HOME_INFRACCION)
-#         # print(resp_HomeInfraccion.headers)
+    loop = asyncio.get_event_loop()
+    future = asyncio.ensure_future(mainids(lista_placas))
+    loop.run_until_complete(future)
+    # print(lista_sessionid)
 
-#         session = extraer_string(
-#             resp_HomeInfraccion.headers["Set-Cookie"], "", "; path=/;")
-#         # print(session)
+    lista_placa = []
+    lista_numdocumento = []
+    lista_tipodocumento = []
+    lista_fechadocumento = []
+    lista_codigoinfraccion = []
+    lista_clasificacion = []
+    lista_entidad = []
+    lista_fechascan = []
+    fecha_scan = datetime.datetime.today().strftime("%Y-%m-%d")
 
-#         captcha = extraer_string(
-#             resp_HomeInfraccion.text, 'scrolling="no" src="Captcha.aspx?numAleatorio=', '" width="')
-#         # print(captcha)
+    async def query_datos(payload, sessionid, placa, session: aiohttp.ClientSession):
+        headers_InfoPapeleta = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'max-age=0',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': sessionid,
+            'Origin': URL_SUTRAN_ORIGIN,
+            'Referer': URL_SUTRAN_HOME_INFRACCION,
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+        }
+        async with session.post(URL_SUTRAN_HOME_INFRACCION, data=payload, headers=headers_InfoPapeleta) as resp:
 
-#         viewstate = extraer_string(
-#             resp_HomeInfraccion.text, 'name="__VIEWSTATE" id="__VIEWSTATE" value="', '" />')
-#         # print(viewstate)
+            resp_InfoPapeleta = (await resp.text())
+            doc = BeautifulSoup(resp_InfoPapeleta, "html.parser")
+            # print(table_tags)
+            # Placa
+            # 0 Número de documento
+            # 1 Tipo de Documento
+            # 2 Fecha de documento
+            # 3 Código de infracción
+            # 4 Clasificación
+            style_tr_datospapeleta_parcial = "border-color:Silver"
 
-#         viewstategenerator = extraer_string(
-#             resp_HomeInfraccion.text, 'name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="', '" />')
-#         # print(viewstate)
+            tr_tags = doc.find_all(
+                "tr", style=lambda tipo: tipo and style_tr_datospapeleta_parcial in tipo)
+            # print(tr_tags)
 
-#         eventvalidation = extraer_string(
-#             resp_HomeInfraccion.text, 'name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="', '" />')
-#         # print(eventvalidation)
+            for t in tr_tags:
+                td = t.find_all("td")
+                fecha = td[2].text
+                fecha_doc = datetime.datetime.strptime(
+                    fecha, '%d/%m/%Y').strftime('%Y-%m-%d')
+                # print(fecha)
+                # print(fecha_doc)
 
-#         payload_InfoPapeleta = '__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=' + urllib.parse.quote(viewstate, safe="") + '&__VIEWSTATEGENERATOR=' + viewstategenerator + '&__EVENTVALIDATION=' + urllib.parse.quote(
-#             eventvalidation, safe="") + '&ddlTipoBusqueda=2&TxtBuscar=&txtPlaca=' + p + '&HFCodCapcha=&TxtCodImagen=' + captcha + '&BtnBuscar=Buscar&HdfModal2=&txtCorreo='
-#         headers_InfoPapeleta = {
-#             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-#             'Accept-Language': 'en-US,en;q=0.9',
-#             'Cache-Control': 'max-age=0',
-#             'Connection': 'keep-alive',
-#             'Content-Type': 'application/x-www-form-urlencoded',
-#             'Cookie': session,
-#             'Origin': URL_SUTRAN_ORIGIN,
-#             'Referer': URL_SUTRAN_HOME_INFRACCION,
-#             'Upgrade-Insecure-Requests': '1',
-#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
-#         }
+                lista_placa.append(placa)
+                lista_numdocumento.append(td[0].text)
+                lista_tipodocumento.append(td[1].text)
+                # lista_fechadocumento.append(td[2].text)
+                # Convierte la fecha de d/m/y a y-m-d
+                lista_fechadocumento.append(fecha_doc)
+                lista_codigoinfraccion.append(td[3].text)
+                lista_clasificacion.append(td[4].text)
+                lista_entidad.append("SUTRAN")
+                lista_fechascan.append(fecha_scan)
 
-#         resp_InfoPapeleta = requests.request(
-#             "POST", URL_SUTRAN_HOME_INFRACCION, headers=headers_InfoPapeleta, data=payload_InfoPapeleta)
+    async def main_datos(multi_placas, lista_sessionid, lista_captcha, lista_viewstate, lista_viewstategenerator, lista_eventvalidation):
+        longitud_lista_placas = len(lista_sessionid)
+        async with aiohttp.ClientSession() as session:
+            tasks_datos = []
+            for x in range(longitud_lista_placas):
+                payload = '__EVENTTARGET=&__EVENTARGUMENT=&__LASTFOCUS=&__VIEWSTATE=' + urllib.parse.quote(lista_viewstate[x], safe="") + '&__VIEWSTATEGENERATOR=' + lista_viewstategenerator[x] + '&__EVENTVALIDATION=' + urllib.parse.quote(
+                    lista_eventvalidation[x], safe="") + '&ddlTipoBusqueda=2&TxtBuscar=&txtPlaca=' + multi_placas[x] + '&HFCodCapcha=&TxtCodImagen=' + lista_captcha[x] + '&BtnBuscar=Buscar&HdfModal2=&txtCorreo='
+                tasks_datos.append(query_datos(
+                    payload, lista_sessionid[x], multi_placas[x], session=session))
+            htmls_datos = await asyncio.gather(*tasks_datos, return_exceptions=True)
 
-#         # print(resp_InfoPapeleta.text)
-#         doc = BeautifulSoup(resp_InfoPapeleta.text, "html.parser")
-#         # tr_style_datospapeleta = "color:#333333;background-color:#F0F0F0;border-color:Silver;"
-#         # tr_tags = doc.find_all("tr", {"style": tr_style_datospapeleta})
-#         # print(tr_tags)
+    asyncio.run(main_datos(lista_placas, lista_sessionid, lista_captcha,
+                lista_viewstate, lista_viewstategenerator, lista_eventvalidation))
 
-#         #id_table_datospapeleta = "gvDeudas"
-#         #table_tags = doc.find_all("table", {"id": id_table_datospapeleta})
+    dict_papeletas = {"placa": lista_placa,
+                      "numdocumento": lista_numdocumento,
+                      "tipodocumento": lista_tipodocumento,
+                      "fechadocumento": lista_fechadocumento,
+                      "codigoinfraccion": lista_codigoinfraccion,
+                      "clasificacion": lista_clasificacion,
+                      "entidad": lista_entidad,
+                      "fechascan": lista_fechascan}
 
-#         # print(table_tags)
-#         # Placa
-#         # 0 Número de documento
-#         # 1 Tipo de Documento
-#         # 2 Fecha de documento
-#         # 3 Código de infracción
-#         # 4 Clasificación
-#         style_tr_datospapeleta_parcial = "border-color:Silver"
-
-#         tr_tags = doc.find_all(
-#             "tr", style=lambda tipo: tipo and style_tr_datospapeleta_parcial in tipo)
-#         # print(tr_tags)
-
-#         for t in tr_tags:
-#             td = t.find_all("td")
-#             lista_placa.append(p)
-#             lista_numdocumento.append(td[0].text)
-#             lista_tipodocumento.append(td[1].text)
-#             lista_fechadocumento.append(td[2].text)
-#             lista_codigoinfraccion.append(td[3].text)
-#             lista_clasificacion.append(td[4].text)
-
-#     dict_papeletas = {"placa": lista_placa,
-#                       "numdocumento": lista_numdocumento,
-#                       "tipodocumento": lista_tipodocumento,
-#                       "fechadocumento": lista_fechadocumento,
-#                       "codigoinfraccion": lista_codigoinfraccion,
-#                       "clasificacion": lista_clasificacion}
-
-#     # print(dict_papeletas)
-#     return dict_papeletas
+    # print(dict_papeletas)
+    return dict_papeletas
