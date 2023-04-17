@@ -5,7 +5,7 @@ import pandas as pd
 
 
 # def obtener_correos(cliente, endpoint, api_key):
-def obtener_correos(cliente, df_placas_clientes_supervisores):
+def obtener_correos(cliente, ruta_cliente_supervisor):
     # client = GraphQLClient(endpoint)
     # client.inject_token(api_key, "x-api-key")
     # lista_clientes = ["San Fernando", "Avgust"]
@@ -41,7 +41,8 @@ def obtener_correos(cliente, df_placas_clientes_supervisores):
     #     q = json.loads(q)
     # print(q["data"]["listClientes"]["items"])
     print(cliente)
-    print(df_placas_clientes_supervisores)
+    # print(df_placas_clientes_supervisores)
+    df_cliente_supervisor = pd.read_csv(ruta_cliente_supervisor, encoding="ISO-8859-1")
     # Bureau Veritas
     # q = q["data"]["listClientes"]["items"]
     # print(q)
@@ -49,10 +50,10 @@ def obtener_correos(cliente, df_placas_clientes_supervisores):
     # correo_supervisor = df_placas_clientes_supervisores["correo_supervisor"].where(
     #     df_placas_clientes_supervisores["cliente"] == cliente
     # )
-    print("cliente==" + "'" + cliente + "'")
-    correo_supervisor = df_placas_clientes_supervisores.query(
-        "cliente==" + "'" + cliente + "'"
-    )["correo_supervisor"]
+    # print("cliente==" + "'" + cliente + "'")
+    correo_supervisor = df_cliente_supervisor.loc[
+        df_cliente_supervisor["cliente"] == cliente, "correo_supervisor"
+    ].item()
     print(correo_supervisor)
     # [{'correo_supervisor': 'dpizarro@mb-renting.com', 'correo_comercial': 'dpizarro@mb-renting.com', 'nombre': 'Bureau Veritas'}]
     # lista_correos = [q[0]["correo_supervisor"], q[0]["correo_comercial"]]

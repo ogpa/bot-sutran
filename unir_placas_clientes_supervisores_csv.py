@@ -15,21 +15,24 @@ lista_placas_cliente = []
 
 def unir_placas_clientes_supervisores_csv(ruta_placas_cliente, ruta_cliente_supervisor):
     df_placas_cliente = pd.read_csv(ruta_placas_cliente, encoding="ISO-8859-1")
-    df_cliente_supervisor = pd.read_csv(ruta_cliente_supervisor, encoding="ISO-8859-1")
-    df_total = df_placas_cliente.merge(df_cliente_supervisor, how="left", on="cliente")
+    # df_cliente_supervisor = pd.read_csv(ruta_cliente_supervisor, encoding="ISO-8859-1")
+    # df_total = df_placas_cliente.merge(df_cliente_supervisor, how="left", on="cliente")
 
     # Eliminar guiones
-    df_total["placa"] = df_total["placa"].apply(eliminar_guion)
+    df_placas_cliente["placa"] = df_placas_cliente["placa"].apply(eliminar_guion)
     # df_total["placa"] = df_total.apply(lambda x: eliminar_guion(x["placa"]), axis=1) #Es lo mismo de arriba
 
     # df_total.to_csv("total_placa_cliente_supervisor.csv", index=False)
     # print(df_total)
-    cant_placas = len(df_total.index)
+    cant_placas = len(df_placas_cliente.index)
     # print(len(df_total.index))
     # for x in range(6):
     for x in range(cant_placas):
         lista_placas_cliente.append(
-            {"placa": df_total["placa"][x], "cliente": df_total["cliente"][x]}
+            {
+                "placa": df_placas_cliente["placa"][x],
+                "cliente": df_placas_cliente["cliente"][x],
+            }
         )
     print(lista_placas_cliente)
     return lista_placas_cliente

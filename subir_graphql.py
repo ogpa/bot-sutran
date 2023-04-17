@@ -20,17 +20,17 @@ mutation operation($input: CreatePapeletaInput!) {
     deuda_atu
     licencia_conducir
     tipo_doc_identidad
-    doc_identidad
+    docidentidad
     tipo_documento
     clasificacion
     agente_infractor
     nombre_infractor
     entidad
     fecha_scan
-    correoenviado
+    correo_enviado
     fecha_correo_enviado
     hora_correo_enviado
-    destinatarios_correoenviado
+    destinatarios_correo_enviado
     hora_scan
     estado_mbr
     fecha_infraccion

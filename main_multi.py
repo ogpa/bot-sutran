@@ -23,15 +23,21 @@ API_KEY = os.getenv("API_KEY")
 ruta_placas_cliente = "placas_cliente_detalles.csv"
 ruta_cliente_supervisor = "cliente_supervisor.csv"
 
+
 # Es una lista de placa, cliente y vehiculoID en JSON
-lista_vehiculos_query = query_vehiculos(
-    NOMBRE_TABLA_VEHICULOS, GRAPHQL_ENDPOINT, API_KEY
-)
+def eliminar_guion(placa):
+    placa_sin_guion = placa.replace("-", "")
+    return placa_sin_guion
+
+
+# lista_vehiculos_query = query_vehiculos(
+#     NOMBRE_TABLA_VEHICULOS, GRAPHQL_ENDPOINT, API_KEY
+# )
 # df_placas_clientes_supervisores = query_vehiculos_csv()
 df_placas_clientes_supervisores = pd.read_csv(
     "total_placa_cliente_supervisor_vanilla.csv", encoding="ISO-8859-1"
 )
-print(lista_vehiculos_query)
+# print(lista_vehiculos_query)
 # Tabla placas
 # De la lista de placas, debo obtener el valor del cliente. Como un vlookup
 # Del valor cliente, obtener el supervisor y su correo
@@ -42,18 +48,39 @@ print(lista_vehiculos_query)
 # Esta tabla la debería sacar de Cliente
 # Cliente | Supervisor | Correo supervisor | Correo administrador
 # Supervisor | Correo
-lista_correos_supervisores_query = ["diego_1021_@outlook.com", "diego.pizarro@pucp.pe"]
+# lista_correos_supervisores_query = ["diego_1021_@outlook.com", "diego.pizarro@pucp.pe"]
 
 
-lista_vehiculos_query = [
-    {"placa": "ATF761", "cliente": "LAS BAMBAS"},
-    {"placa": "ATF716", "cliente": "LAS BAMBAS"},
-    {"placa": "ATE939", "cliente": "LAS BAMBAS"},
-    {"placa": "ATF894", "cliente": "LAS BAMBAS"},
-    {"placa": "ATF893", "cliente": "LAS BAMBAS"},
-    {"placa": "ATF842", "cliente": "LAS BAMBAS"},
-    {"placa": "BKD764", "cliente": "SAN FERNANDO"},
-]
+# lista_vehiculos_query = [
+#     {"placa": "ATF761", "cliente": "LAS BAMBAS"},
+#     {"placa": "ATF716", "cliente": "LAS BAMBAS"},
+#     {"placa": "ATE939", "cliente": "LAS BAMBAS"},
+#     {"placa": "ATF894", "cliente": "LAS BAMBAS"},
+#     {"placa": "ATF893", "cliente": "LAS BAMBAS"},
+#     {"placa": "ATF842", "cliente": "LAS BAMBAS"},
+#     {"placa": "BKD764", "cliente": "SAN FERNANDO S.A"},
+# ]
+
+df_placas_cliente = pd.read_csv(ruta_placas_cliente, encoding="ISO-8859-1")
+# df_cliente_supervisor = pd.read_csv(ruta_cliente_supervisor, encoding="ISO-8859-1")
+# df_total = df_placas_cliente.merge(df_cliente_supervisor, how="left", on="cliente")
+
+# Eliminar guiones
+df_placas_cliente["placa"] = df_placas_cliente["placa"].apply(eliminar_guion)
+cant_placas = len(df_placas_cliente.index)
+
+lista_vehiculos_query = []
+
+# print(len(df_total.index))
+# for x in range(6):
+# for x in range(cant_placas):
+for x in range(628, 630):
+    lista_vehiculos_query.append(
+        {
+            "placa": df_placas_cliente["placa"][x],
+            "cliente": df_placas_cliente["cliente"][x],
+        }
+    )
 lista_placa_query = []
 lista_cliente_query = []
 # lista_id_query = []
@@ -92,20 +119,20 @@ if len(dict_papeletas_nuevas["numdocumento"]) > 0:
     print(papeletas_dict)
     # Para los correos necesito:
     # Cliente, placas, fechas, monto, monto pronto pago, numdocumento, path /tmp/ (para adjuntar el archivo), correo supervisor, correo comercial
-    c = listar_correos(papeletas_dict, df_placas_clientes_supervisores)
+    c = listar_correos(papeletas_dict, ruta_cliente_supervisor)
     lista_para_enviar_correos = c[0]
     papeletas_con_correo = c[1]
     # print(lista)
     # enviar_correos(lista_para_enviar_correos)
-    # subir_graphql(
-    #     NOMBRE_TABLA_PAPELETAS,
-    #     papeletas_con_correo,
-    #     lista_placa_query,
-    #     GRAPHQL_ENDPOINT,
-    #     API_KEY,
-    # )
-    # print(papeletas_dict)
-    # subir_archivos(NOMBRE_BUCKET_S3, PATH_PUBLIC, papeletas_dict)
+    subir_graphql(
+        NOMBRE_TABLA_PAPELETAS,
+        papeletas_con_correo,
+        lista_placa_query,
+        GRAPHQL_ENDPOINT,
+        API_KEY,
+    )
+    print(papeletas_dict)
+    subir_archivos(NOMBRE_BUCKET_S3, PATH_PUBLIC, papeletas_dict)
 
 
 else:
