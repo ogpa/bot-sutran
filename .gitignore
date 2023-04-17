@@ -5,3 +5,9 @@
 *.pyc
 *.csv
 *.xlsx
+.env
+*.pyc
+*.pyc
+*.pyc
+*.pyc
+*.zip

@@ -5,7 +5,7 @@ client = boto3.client("dynamodb")
 
 def eliminar_repetidas(tabla_papeletas, dict_papeletas_scaneadas, endpoint, api_key):
     response_papeletas = query_papeletas(tabla_papeletas, endpoint, api_key)
-
+    # print(response_papeletas)
     lista_papeletas_scaneadas = dict_papeletas_scaneadas["numdocumento"]
     lista_papeletas_existentes = []
 

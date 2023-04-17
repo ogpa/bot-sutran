@@ -45,13 +45,11 @@ mutation operation($input: CreatePapeletaInput!) {
     fecha_pago
     cont_pago
     url_doc_pago
-    v_pago
     estado_json
     estado_actual
     createdAt
     updatedAt
     estado_mbr
-    v_pago
     _version
     _lastChangedAt
     _deleted
@@ -66,15 +64,13 @@ variables = """{
         "id": "v2",
         "num_documento": "logapiqw",
         "url_docsextra": "{}",
-        "estado_json": [\"{\\\"Pendiente\\\":{\\\"fecha_inicio\\\":\\\"""" + fecha + """\\\",\\\"url_doc\\\":\\\"""" + url + """\\\"}}\"],
+        "estado_json": \"{\\\"Pendiente\\\":{\\\"fecha_inicio\\\":\\\"""" + fecha + """\\\",\\\"url_doc\\\":\\\"""" + url + """\\\"}}\",
         "entidad": "SUTRAN",
         "fechascan": "2023-01-24",
         "correoenviado": false,
         "destinatarios_correoenviado": [],
         "vehiculoID": "1ad8c0b3-31bd-4354-85c4-a014399b4db3",
-        "estado_mbr":"Pendiente",
-        "v_pago":"v0_pago"
-        
+        "estado_mbr":"Pendiente"
     }
 }"""
 

@@ -1,3 +1,4 @@
+import os
 from multi_infracciones_sutran import obtener_datos_papeletas
 from multi_verificar_sutran import verificar_papeletas
 from multi_cinemometro_foto import obtener_fotos
@@ -7,17 +8,30 @@ from subir_archivos import subir_archivos
 from subir_graphql import subir_graphql
 from listar_correos import listar_correos
 from enviar_correos import enviar_correos
+from dotenv import load_dotenv
+from query_vehiculos_csv import query_vehiculos_csv
+from unir_placas_clientes_supervisores_csv import unir_placas_clientes_supervisores_csv
+import pandas as pd
 
-NOMBRE_TABLA_VEHICULOS = "Vehiculo-lantl5egqfformu4wl5ale7p6e-dev"
-NOMBRE_TABLA_PAPELETAS = "Papeleta-lantl5egqfformu4wl5ale7p6e-dev"
-NOMBRE_BUCKET_S3 = "papeletas-storage-16d23abc230842-dev"
-PATH_PUBLIC = "public/"
-GRAPHQL_ENDPOINT = "https://mjga7yrhl5hvlbe5ypz6r27csu.appsync-api.us-east-1.amazonaws.com/graphql"
-API_KEY = "da2-rcfdc2v4ezezjgdubivb4qwhba"
+load_dotenv()
+NOMBRE_TABLA_VEHICULOS = os.getenv("NOMBRE_TABLA_VEHICULOS")
+NOMBRE_TABLA_PAPELETAS = os.getenv("NOMBRE_TABLA_PAPELETAS")
+NOMBRE_BUCKET_S3 = os.getenv("NOMBRE_BUCKET_S3")
+PATH_PUBLIC = os.getenv("PATH_PUBLIC")
+GRAPHQL_ENDPOINT = os.getenv("GRAPHQL_ENDPOINT")
+API_KEY = os.getenv("API_KEY")
+ruta_placas_cliente = "placas_cliente_detalles.csv"
+ruta_cliente_supervisor = "cliente_supervisor.csv"
+
 # Es una lista de placa, cliente y vehiculoID en JSON
 lista_vehiculos_query = query_vehiculos(
-    NOMBRE_TABLA_VEHICULOS, GRAPHQL_ENDPOINT, API_KEY)
-# print(lista_vehiculos_query)
+    NOMBRE_TABLA_VEHICULOS, GRAPHQL_ENDPOINT, API_KEY
+)
+# df_placas_clientes_supervisores = query_vehiculos_csv()
+df_placas_clientes_supervisores = pd.read_csv(
+    "total_placa_cliente_supervisor_vanilla.csv", encoding="ISO-8859-1"
+)
+print(lista_vehiculos_query)
 # Tabla placas
 # De la lista de placas, debo obtener el valor del cliente. Como un vlookup
 # Del valor cliente, obtener el supervisor y su correo
@@ -28,17 +42,26 @@ lista_vehiculos_query = query_vehiculos(
 # Esta tabla la debería sacar de Cliente
 # Cliente | Supervisor | Correo supervisor | Correo administrador
 # Supervisor | Correo
-lista_correos_supervisores_query = [
-    "diego_1021_@outlook.com", "diego.pizarro@pucp.pe"]
+lista_correos_supervisores_query = ["diego_1021_@outlook.com", "diego.pizarro@pucp.pe"]
 
+
+lista_vehiculos_query = [
+    {"placa": "ATF761", "cliente": "LAS BAMBAS"},
+    {"placa": "ATF716", "cliente": "LAS BAMBAS"},
+    {"placa": "ATE939", "cliente": "LAS BAMBAS"},
+    {"placa": "ATF894", "cliente": "LAS BAMBAS"},
+    {"placa": "ATF893", "cliente": "LAS BAMBAS"},
+    {"placa": "ATF842", "cliente": "LAS BAMBAS"},
+    {"placa": "BKD764", "cliente": "SAN FERNANDO"},
+]
 lista_placa_query = []
 lista_cliente_query = []
-lista_id_query = []
+# lista_id_query = []
 
 for v in lista_vehiculos_query:
     lista_placa_query.append(v["placa"])
     lista_cliente_query.append(v["cliente"])
-    lista_id_query.append(v["id"])
+    # lista_id_query.append(v["id"])
 
 
 # lista_placas_query = ["BKD764", "BLV785", "BDN910", "BEB884", "BEB741", "BHM942", "ATE776", "ATE778", "ATE880", "ATE914", "ATE937" "ATE938", "ATE939", "ATE940", "ATF713", "ATF714",
@@ -49,12 +72,11 @@ for v in lista_vehiculos_query:
 dict_datos = obtener_datos_papeletas(lista_placa_query)
 
 dict_papeletas_nuevas = eliminar_repetidas(
-    NOMBRE_TABLA_PAPELETAS, dict_datos, GRAPHQL_ENDPOINT, API_KEY)
+    NOMBRE_TABLA_PAPELETAS, dict_datos, GRAPHQL_ENDPOINT, API_KEY
+)
 
-if (len(dict_papeletas_nuevas["numdocumento"]) > 0):
-
-    dict_verificar = verificar_papeletas(
-        dict_papeletas_nuevas, lista_vehiculos_query)
+if len(dict_papeletas_nuevas["numdocumento"]) > 0:
+    dict_verificar = verificar_papeletas(dict_papeletas_nuevas, lista_vehiculos_query)
 
     # Aquí deberían figurar los clientes
 
@@ -62,24 +84,28 @@ if (len(dict_papeletas_nuevas["numdocumento"]) > 0):
 
     dict_verificar_nuevas = dict_papeletas_nuevas | dict_verificar
 
-    dict_fotos = obtener_fotos(dict_verificar_nuevas,
-                               NOMBRE_BUCKET_S3, PATH_PUBLIC)
+    dict_fotos = obtener_fotos(dict_verificar_nuevas, NOMBRE_BUCKET_S3, PATH_PUBLIC)
     del dict_fotos["numdocumento"]
 
     papeletas_dict = dict_verificar_nuevas | dict_fotos
-    # print("papeletas_dict")
-    # print(papeletas_dict)
+    print("papeletas_dict")
+    print(papeletas_dict)
     # Para los correos necesito:
     # Cliente, placas, fechas, monto, monto pronto pago, numdocumento, path /tmp/ (para adjuntar el archivo), correo supervisor, correo comercial
-    c = listar_correos(papeletas_dict, GRAPHQL_ENDPOINT, API_KEY)
+    c = listar_correos(papeletas_dict, df_placas_clientes_supervisores)
     lista_para_enviar_correos = c[0]
     papeletas_con_correo = c[1]
     # print(lista)
-    enviar_correos(lista_para_enviar_correos)
-    subir_graphql(NOMBRE_TABLA_PAPELETAS, papeletas_con_correo,
-                  lista_id_query, lista_placa_query, GRAPHQL_ENDPOINT, API_KEY)
-    print(papeletas_dict)
-    subir_archivos(NOMBRE_BUCKET_S3, PATH_PUBLIC, papeletas_dict)
+    # enviar_correos(lista_para_enviar_correos)
+    # subir_graphql(
+    #     NOMBRE_TABLA_PAPELETAS,
+    #     papeletas_con_correo,
+    #     lista_placa_query,
+    #     GRAPHQL_ENDPOINT,
+    #     API_KEY,
+    # )
+    # print(papeletas_dict)
+    # subir_archivos(NOMBRE_BUCKET_S3, PATH_PUBLIC, papeletas_dict)
 
 
 else:

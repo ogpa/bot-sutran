@@ -2,9 +2,6 @@ import json
 from graphqlclient import GraphQLClient
 
 
-#tabla_vehiculos = "Vehiculo-lantl5egqfformu4wl5ale7p6e-dev"
-#endpoint = "https://mjga7yrhl5hvlbe5ypz6r27csu.appsync-api.us-east-1.amazonaws.com/graphql"
-#api_key = "da2-rcfdc2v4ezezjgdubivb4qwhba"
 # Se deben obviar los que tengan _deleted = true
 
 

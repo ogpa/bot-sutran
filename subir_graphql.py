@@ -11,7 +11,6 @@ mutation operation($input: CreatePapeletaInput!) {
     monto_infraccion
     monto_prontopago
     estado_entidad
-    url_docsextra
     reglamento
     gast_cost
     dscto_2
@@ -20,28 +19,29 @@ mutation operation($input: CreatePapeletaInput!) {
     deuda_ofisat
     deuda_atu
     licencia_conducir
-    tipo_docidentidad
-    docidentidad
+    tipo_doc_identidad
+    doc_identidad
     tipo_documento
     clasificacion
     agente_infractor
     nombre_infractor
     entidad
-    fechascan
+    fecha_scan
     correoenviado
-    fecha_correoenviado
-    hora_correoenviado
+    fecha_correo_enviado
+    hora_correo_enviado
     destinatarios_correoenviado
-    horascan
-    vehiculoID
+    hora_scan
     estado_mbr
     fecha_infraccion
     hora_infraccion
     cliente
+    estado_actual
     placa
+    estado_json
+    estado_pago
     createdAt
     updatedAt
-    estado_json
     _version
     _lastChangedAt
     _deleted
@@ -58,53 +58,130 @@ def convertir_lista_a_str(lista):
     return texto[:-1]
 
 
-def subir_graphql(tabla_papeletas, papeletas, lista_id_query, lista_placa_query, endpoint, api_key):
+def subir_graphql(tabla_papeletas, papeletas, lista_placa_query, endpoint, api_key):
     client = GraphQLClient(endpoint)
-    client.inject_token(api_key, 'x-api-key')
+    client.inject_token(api_key, "x-api-key")
     cant_elementos = len(papeletas["entidad"])
     for x in range(cant_elementos):
         placa = papeletas["placa"][x]
         # id
         idx = lista_placa_query.index(placa)
-        vehiculoID = lista_id_query[idx]
-        #cliente = lista_cliente_query[idx]
+        # vehiculoID = lista_id_query[idx]
+        # cliente = lista_cliente_query[idx]
         hora = datetime.now().time()
         hora = str(hora)
         hora = hora[:-3]
         match papeletas["entidad"][x]:
             case "SUTRAN":
-                d_c = convertir_lista_a_str(
-                    papeletas["destinatarios_correoenviado"][x])
-                variables = """{
+                d_c = convertir_lista_a_str(papeletas["destinatarios_correoenviado"][x])
+                variables = (
+                    """{
   "input": {
-    "id": """ + '"' + papeletas["numdocumento"][x] + papeletas["placa"][x] + '"' + """,
-    "agente_infractor": """ + '"' + papeletas["agenteinfractor"][x] + '"' + """,
-    "clasificacion": """ + '"' + papeletas["clasificacion"][x] + '"' + """,
-    "cliente": """ + '"' + papeletas["cliente"][x] + '"' + """,
-    "codigo_infraccion": """ + '"' + papeletas["codigoinfraccion"][x] + '"' + """,
-    "correoenviado": true,
-    "destinatarios_correoenviado": [""" + d_c + """],
+    "id": """
+                    + '"'
+                    + papeletas["numdocumento"][x]
+                    + papeletas["placa"][x]
+                    + '"'
+                    + """,
+    "agente_infractor": """
+                    + '"'
+                    + papeletas["agenteinfractor"][x]
+                    + '"'
+                    + """,
+    "clasificacion": """
+                    + '"'
+                    + papeletas["clasificacion"][x]
+                    + '"'
+                    + """,
+    "cliente": """
+                    + '"'
+                    + papeletas["cliente"][x]
+                    + '"'
+                    + """,
+    "codigo_infraccion": """
+                    + '"'
+                    + papeletas["codigoinfraccion"][x]
+                    + '"'
+                    + """,
+    "correo_enviado": true,
+    "destinatarios_correo_enviado": ["""
+                    + d_c
+                    + """],
     "entidad": "SUTRAN",
-    "estado_entidad": """ + '"' + papeletas["estado"][x] + '"' + """,
+    "estado_entidad": """
+                    + '"'
+                    + papeletas["estado"][x]
+                    + '"'
+                    + """,
     "estado_mbr": "Pendiente",
-    "fechascan": """ + '"' + papeletas["fechascan"][x] + '"' + """,
-    "fecha_documento": """ + '"' + papeletas["fechadocumento"][x] + '"' + """,
-    "fecha_infraccion": """ + '"' + papeletas["fechadocumento"][x] + '"' + """,
-    "horascan": """ + '"' + hora + '"' + """,
-    "infractor": """ + '"' + papeletas["cliente"][x] + '"' + """,
-    "monto_infraccion": """ + papeletas["montoinfraccion"][x] + """, 
-    "monto_prontopago": """ + papeletas["montoprontopago"][x] + """,
-    "nombre_infractor": """ + '"' + papeletas["nombreinfractor"][x] + '"' + """,
-    "num_documento": """ + '"' + papeletas["numdocumento"][x] + '"' + """,
-    "placa":  """ + '"' + papeletas["placa"][x] + '"' + """,
-    "tipo_documento": """ + '"' + papeletas["tipodocumento"][x] + '"' + """,
-    "vehiculoID": """ + '"' + vehiculoID + '"' + """,
-    "estado_json":[\"{\\\"Pendiente\\\":{\\\"fecha_inicio\\\":\\\"""" + papeletas["fechadocumento"][x] + """\\\",\\\"url_doc\\\":\\\"public/""" + papeletas["placa"][x] + "/Papeletas/" + papeletas["numdocumento"][x] + "Papeleta_" + papeletas["path"][x] + """\\\"}}\"]
+    "estado_actual": "Pendiente",
+    "estado_pago": "Pendiente",
+    "fecha_scan": """
+                    + '"'
+                    + papeletas["fechascan"][x]
+                    + '"'
+                    + """,
+    "fecha_documento": """
+                    + '"'
+                    + papeletas["fechadocumento"][x]
+                    + '"'
+                    + """,
+    "fecha_infraccion": """
+                    + '"'
+                    + papeletas["fechadocumento"][x]
+                    + '"'
+                    + """,
+    "hora_scan": """
+                    + '"'
+                    + hora
+                    + '"'
+                    + """,
+    "infractor": """
+                    + '"'
+                    + papeletas["cliente"][x]
+                    + '"'
+                    + """,
+    "monto_infraccion": """
+                    + papeletas["montoinfraccion"][x]
+                    + """, 
+    "monto_prontopago": """
+                    + papeletas["montoprontopago"][x]
+                    + """,
+    "nombre_infractor": """
+                    + '"'
+                    + papeletas["nombreinfractor"][x]
+                    + '"'
+                    + """,
+    "num_documento": """
+                    + '"'
+                    + papeletas["numdocumento"][x]
+                    + '"'
+                    + """,
+    "placa":  """
+                    + '"'
+                    + papeletas["placa"][x]
+                    + '"'
+                    + """,
+    "tipo_documento": """
+                    + '"'
+                    + papeletas["tipodocumento"][x]
+                    + '"'
+                    + """,
+    "estado_json":\"{\\\"Pendiente\\\":{\\\"fecha_inicio\\\":\\\""""
+                    + papeletas["fechadocumento"][x]
+                    + """\\\",\\\"url_doc\\\":\\\""""
+                    + papeletas["placa"][x]
+                    + "/Papeletas/"
+                    + papeletas["numdocumento"][x]
+                    + "/Papeleta_"
+                    + papeletas["path"][x]
+                    + """\\\"}}\"
   }
 }"""
+                )
                 # print(variables)
                 r = client.execute(query, variables)
-                # print(r)
+                print(r)
 
                 # pr_sutran = {"PutRequest": {
                 #     "Item": {

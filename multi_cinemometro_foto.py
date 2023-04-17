@@ -146,6 +146,7 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
     lista_path = [None]*longitud_numdocumento
     #lista_path_s3 = [None]*longitud_numdocumento
     lista_numdocumentofotos = [None]*longitud_numdocumento
+    lista_extension = [None]*longitud_numdocumento
 
     async def query_fotos(payload, numdocumento, placa, fechadocumento, session: aiohttp.ClientSession):
 
@@ -177,9 +178,12 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
             # Obtener src de fotos
             # Obtener index del documento
 
+            # src = extraer_string(
+            #    resp_Fotos, 'class="css_image1" src="data:image/jpg;base64,', '" src="%20"')
             src = extraer_string(
-                resp_Fotos, 'class="css_image1" src="data:image/jpg;base64,', '" src="%20"')
-
+                resp_Fotos, 'base64,', '" src="%20"')
+            extension_documento = extraer_string(
+                resp_Fotos, 'image/', ';')
             src_encode = src.encode()
 
             # Cambiar formato de fecha documento de 2023-01-25 a 25-01-2023 para que el path sea más fácil de leer
@@ -217,11 +221,13 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
             fechadocumento_path = fechadocumento.replace(
                 "-" + fechadocumento_mes + "-", "-" + nombre_mes + "-")
 
-            path_imagen = placa + "_" + fechadocumento_path + "_" + numdocumento + ".jpg"
+            path_imagen = placa + "_" + fechadocumento_path + \
+                "_" + numdocumento + "." + extension_documento
             with open(path_imagen, "wb") as fh:
                 fh.write(base64.decodebytes(src_encode))
             lista_numdocumentofotos[idx] = numdocumento
             lista_path[idx] = path_imagen
+            lista_extension[idx] = extension_documento
             # lista_path_s3[idx] = "https://" + bucket_s3 + \
             #    ".s3.amazonaws.com/" + path_public + path_imagen
             # lista_numdocumentofotos.insert(idx, numdocumento)
@@ -245,7 +251,8 @@ def obtener_fotos(papeletas, bucket_s3, path_public):
 
     dict_datosfotos = {
         "numdocumento": lista_numdocumentofotos,
-        "path": lista_path
+        "path": lista_path,
+        "extension": lista_extension
     }
 
     # print(dict_papeletas)
