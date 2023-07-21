@@ -14,7 +14,6 @@ from unir_placas_clientes_supervisores_csv import unir_placas_clientes_superviso
 import pandas as pd
 
 load_dotenv()
-NOMBRE_TABLA_VEHICULOS = os.getenv("NOMBRE_TABLA_VEHICULOS")
 NOMBRE_TABLA_PAPELETAS = os.getenv("NOMBRE_TABLA_PAPELETAS")
 NOMBRE_BUCKET_S3 = os.getenv("NOMBRE_BUCKET_S3")
 PATH_PUBLIC = os.getenv("PATH_PUBLIC")
@@ -34,9 +33,12 @@ def eliminar_guion(placa):
 #     NOMBRE_TABLA_VEHICULOS, GRAPHQL_ENDPOINT, API_KEY
 # )
 # df_placas_clientes_supervisores = query_vehiculos_csv()
-df_placas_clientes_supervisores = pd.read_csv(
-    "total_placa_cliente_supervisor_vanilla.csv", encoding="ISO-8859-1"
-)
+# df_placas_clientes_supervisores = pd.read_csv(
+#     "total_placa_cliente_supervisor_vanilla.csv", encoding="ISO-8859-1"
+# )
+
+# Eliminar placas sin cliente y también las que en cliente tengan las palabras "Vendida","vendida" o "VENDIDA"
+
 # print(lista_vehiculos_query)
 # Tabla placas
 # De la lista de placas, debo obtener el valor del cliente. Como un vlookup
@@ -64,7 +66,9 @@ df_placas_clientes_supervisores = pd.read_csv(
 df_placas_cliente = pd.read_csv(ruta_placas_cliente, encoding="ISO-8859-1")
 # df_cliente_supervisor = pd.read_csv(ruta_cliente_supervisor, encoding="ISO-8859-1")
 # df_total = df_placas_cliente.merge(df_cliente_supervisor, how="left", on="cliente")
-
+df_placas_cliente = df_placas_cliente[
+    df_placas_cliente["cliente"].str.contains("Vendida|vendida|VENDIDA") == False
+]
 # Eliminar guiones
 df_placas_cliente["placa"] = df_placas_cliente["placa"].apply(eliminar_guion)
 cant_placas = len(df_placas_cliente.index)
@@ -74,7 +78,7 @@ lista_vehiculos_query = []
 # print(len(df_total.index))
 # for x in range(6):
 # for x in range(cant_placas):
-for x in range(628, 630):
+for x in range(151, 200):
     lista_vehiculos_query.append(
         {
             "placa": df_placas_cliente["placa"][x],
@@ -123,7 +127,7 @@ if len(dict_papeletas_nuevas["numdocumento"]) > 0:
     lista_para_enviar_correos = c[0]
     papeletas_con_correo = c[1]
     # print(lista)
-    # enviar_correos(lista_para_enviar_correos)
+    enviar_correos(lista_para_enviar_correos)
     subir_graphql(
         NOMBRE_TABLA_PAPELETAS,
         papeletas_con_correo,

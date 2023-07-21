@@ -82,7 +82,7 @@ def enviar_correos(lista_para_enviar_correos):
         message["Subject"] = "Papeletas " + x[0]["cliente"]
         message["To"] = ", ".join(correos_destinarios_incluido_diego)
         # Adjuntar imágenes
-        print('x[3]["path"]', x[3]["path"])
+        print(x[3]["path"])
         for p in x[3]["path"]:
             try:
                 part = MIMEApplication(open(p, "rb").read())
